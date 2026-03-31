@@ -24,7 +24,7 @@ final class PermissionChecker: ObservableObject {
 
     private func check() {
         let ax = testAccessibility()
-        let input = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+        let input = testInputMonitoring()
 
         if ax != accessibilityGranted {
             accessibilityGranted = ax
@@ -34,18 +34,33 @@ final class PermissionChecker: ObservableObject {
         }
     }
 
-    /// Actually test Accessibility by querying another app's AX attributes.
-    /// AXIsProcessTrusted() can be stale, so this is more reliable.
+    /// Test Accessibility by querying another app's AX attributes.
     private func testAccessibility() -> Bool {
-        // First check the fast API
         if AXIsProcessTrusted() { return true }
 
-        // If the API says no, try an actual AX query as confirmation
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return false }
         let appElement = AXUIElementCreateApplication(frontApp.processIdentifier)
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
         return result == .success
+    }
+
+    /// Test Input Monitoring by trying to open an HID manager.
+    /// IOHIDManagerOpen fails when Input Monitoring is not granted.
+    private func testInputMonitoring() -> Bool {
+        let api = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        if api == kIOHIDAccessTypeGranted { return true }
+        if api == kIOHIDAccessTypeDenied { return false }
+
+        // If unknown, probe by opening an HID manager
+        let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+        IOHIDManagerSetDeviceMatching(manager, [
+            kIOHIDDeviceUsagePageKey: kHIDPage_GenericDesktop,
+            kIOHIDDeviceUsageKey: kHIDUsage_GD_Keyboard,
+        ] as CFDictionary)
+        let result = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
+        IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
+        return result == kIOReturnSuccess
     }
 }
 

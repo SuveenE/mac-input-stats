@@ -48,8 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Disable state restoration so Dashboard doesn't reappear
         UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
 
-        eventMonitors.start()
-        micMonitor.start()
+        let needsOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedSetup")
+        if !needsOnboarding {
+            eventMonitors.start()
+            micMonitor.start()
+        }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
@@ -74,8 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Show onboarding on first launch
-        if !UserDefaults.standard.bool(forKey: "hasCompletedSetup") {
+        if needsOnboarding {
             showOnboarding()
         }
     }
@@ -90,9 +92,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(true, forKey: "hasCompletedSetup")
             self.onboardingWindow?.close()
             self.onboardingWindow = nil
-            // Restart monitors to pick up newly granted permissions
-            self.eventMonitors.stop()
-            self.eventMonitors.start()
+            // Relaunch so the fresh process picks up TCC permission grants
+            self.relaunchApp()
         }
 
         let window = NSWindow(
@@ -138,6 +139,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setIconActive(true)
         panel?.makeKey()
+    }
+
+    func relaunchApp() {
+        let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
+        let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-n", path]
+        try? task.run()
+        NSApp.terminate(nil)
     }
 
     private func closePanel() {

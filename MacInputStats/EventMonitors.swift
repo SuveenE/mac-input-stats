@@ -5,7 +5,6 @@ import IOKit.hid
 @MainActor
 final class EventMonitors: ObservableObject {
     @Published private(set) var accessibilityGranted = false
-    @Published private(set) var eventTapActive = false
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -104,7 +103,6 @@ final class EventMonitors: ObservableObject {
         }
 
         eventTap = tap
-        eventTapActive = true
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)

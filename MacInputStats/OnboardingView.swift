@@ -4,10 +4,15 @@ import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject var eventMonitors: EventMonitors
-    @State private var accessibilityGranted = AXIsProcessTrusted()
     @State private var pollTimer: Timer?
 
     var onComplete: () -> Void
+
+    // CGEvent tap requires both Accessibility and Input Monitoring.
+    // If the tap is active, both are granted.
+    private var accessibilityGranted: Bool {
+        AXIsProcessTrusted() || eventMonitors.eventTapActive
+    }
 
     private var inputMonitoringGranted: Bool {
         eventMonitors.eventTapActive
@@ -145,9 +150,7 @@ struct OnboardingView: View {
     private func startPolling() {
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             Task { @MainActor in
-                accessibilityGranted = AXIsProcessTrusted()
-                // Input Monitoring is checked via eventMonitors.eventTapActive (reactive)
-                // But if permissions were just granted, try restarting the tap
+                // Retry creating the event tap if permissions were just granted
                 if !eventMonitors.eventTapActive {
                     eventMonitors.stop()
                     eventMonitors.start()

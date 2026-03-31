@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private var panel: FloatingPanel<AnyView>?
+    private var onboardingWindow: NSWindow?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -66,10 +67,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // a hidden window is needed for NSEvent global monitors to work
         DispatchQueue.main.async {
             for window in NSApplication.shared.windows {
-                guard window.level == .normal, !(window is FloatingPanel<AnyView>) else { continue }
+                guard window.level == .normal,
+                      !(window is FloatingPanel<AnyView>),
+                      window !== self.onboardingWindow else { continue }
                 window.orderOut(nil)
             }
         }
+
+        // Show onboarding on first launch
+        if !UserDefaults.standard.bool(forKey: "hasCompletedSetup") {
+            showOnboarding()
+        }
+    }
+
+    func showOnboarding() {
+        if let existing = onboardingWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let view = OnboardingView {
+            UserDefaults.standard.set(true, forKey: "hasCompletedSetup")
+            self.onboardingWindow?.close()
+            self.onboardingWindow = nil
+            // Restart monitors to pick up newly granted permissions
+            self.eventMonitors.stop()
+            self.eventMonitors.start()
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 340),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Setup"
+        window.contentView = NSHostingView(rootView: view)
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        onboardingWindow = window
     }
 
     @objc private func togglePanel() {
@@ -84,7 +122,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store: store,
             micMonitor: micMonitor,
             updater: updaterController.updater,
-            onClose: { [weak self] in self?.closePanel() }
+            onClose: { [weak self] in self?.closePanel() },
+            onShowSetup: { [weak self] in self?.showOnboarding() }
         )
 
         if let panel {

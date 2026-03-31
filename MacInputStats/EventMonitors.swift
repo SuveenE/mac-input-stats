@@ -1,11 +1,8 @@
 import AppKit
-import ApplicationServices
 import IOKit.hid
 
 @MainActor
 final class EventMonitors: ObservableObject {
-    @Published private(set) var accessibilityGranted = false
-
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var store: StatsStore
@@ -25,15 +22,6 @@ final class EventMonitors: ObservableObject {
     }
 
     func start() {
-        Self.requestAccessibilityIfNeeded()
-        accessibilityGranted = AXIsProcessTrusted()
-
-        // Check Input Monitoring — needed for keystroke capture
-        let inputAccess = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
-        if inputAccess != kIOHIDAccessTypeGranted {
-            IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-        }
-
         startEventTap()
         startScreenTimeTracking()
     }
@@ -113,7 +101,6 @@ final class EventMonitors: ObservableObject {
 
         switch type {
         case .keyDown:
-            if !accessibilityGranted { accessibilityGranted = true }
             store.incrementKeystroke(app: app)
 
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
@@ -165,17 +152,5 @@ final class EventMonitors: ObservableObject {
         if elapsed > 0.5 {
             store.addScreenTime(elapsed, app: app)
         }
-    }
-
-    /// Prompt for Accessibility permission only if not already granted.
-    static func requestAccessibilityIfNeeded() {
-        if !AXIsProcessTrusted() {
-            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-            AXIsProcessTrustedWithOptions(options)
-        }
-    }
-
-    static var isAccessibilityGranted: Bool {
-        AXIsProcessTrusted()
     }
 }

@@ -37,6 +37,7 @@ struct MenuBarView: View {
     @ObservedObject var micMonitor: SpeechDetector
     var updater: SPUUpdater
     var onClose: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
     @State private var hoveredDate: String?
     @State private var expandedApp: String?
     @AppStorage("statsExpanded") private var statsExpanded = false
@@ -457,11 +458,20 @@ struct MenuBarView: View {
     // MARK: - Footer
 
     private var footerBar: some View {
-        HStack {
+        HStack(spacing: 12) {
             Button {
                 updater.checkForUpdates()
             } label: {
-                Text("Check for Updates")
+                Text("Updates")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.55))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                onOpenSettings?()
+            } label: {
+                Text("Permissions")
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.55))
             }

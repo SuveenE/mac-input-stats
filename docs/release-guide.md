@@ -19,6 +19,15 @@ Both are required. Without Apple signing, users can't install. Without Sparkle s
 
 ## Steps
 
+### 0. Bump version numbers
+
+Update both `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` (both Debug and Release configs):
+
+- `MARKETING_VERSION` → the new version string (e.g., `1.0.1`)
+- `CURRENT_PROJECT_VERSION` → increment the build number (e.g., `2`)
+
+Sparkle compares `shortVersionString` from the appcast against `CFBundleShortVersionString` (derived from `MARKETING_VERSION`). If you forget this, users who already have the new version will still see an update prompt.
+
 ### 1. Archive
 
 ```bash

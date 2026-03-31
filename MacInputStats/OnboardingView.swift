@@ -4,7 +4,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @State private var accessibilityGranted = AXIsProcessTrusted()
-    @State private var inputMonitoringGranted = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+    @State private var inputMonitoringGranted = Self.checkInputMonitoring()
     @State private var pollTimer: Timer?
 
     var onComplete: () -> Void
@@ -129,7 +129,12 @@ struct OnboardingView: View {
     }
 
     private func requestInputMonitoring() {
-        // Open System Settings directly to Input Monitoring
+        // Try IOHIDRequestAccess first — may show the system prompt
+        let access = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        if access != kIOHIDAccessTypeGranted {
+            IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+        }
+        // Also open System Settings to Input Monitoring as a fallback
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
             NSWorkspace.shared.open(url)
         }
@@ -139,8 +144,35 @@ struct OnboardingView: View {
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             Task { @MainActor in
                 accessibilityGranted = AXIsProcessTrusted()
-                inputMonitoringGranted = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+                inputMonitoringGranted = Self.checkInputMonitoring()
             }
         }
+    }
+
+    /// Check Input Monitoring by trying to create a CGEvent tap.
+    /// IOHIDCheckAccess is unreliable — it often doesn't update after
+    /// permissions are granted until the app restarts. Creating a tap
+    /// is the definitive test.
+    static func checkInputMonitoring() -> Bool {
+        // First try the API — if it says granted, trust it
+        if IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted {
+            return true
+        }
+
+        // Probe by creating a listen-only tap for key events
+        let mask: CGEventMask = 1 << CGEventType.keyDown.rawValue
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .tailAppendEventTap,
+            options: .listenOnly,
+            eventsOfInterest: mask,
+            callback: { _, _, event, _ in Unmanaged.passUnretained(event) },
+            userInfo: nil
+        ) else {
+            return false
+        }
+        // Tap created successfully — permission is granted. Clean up.
+        CFMachPortInvalidate(tap)
+        return true
     }
 }

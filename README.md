@@ -11,7 +11,7 @@
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-green?labelColor=000000" alt="MIT License" />
     </a>
-    <img src="https://img.shields.io/badge/macOS-14.0%2B-yellow?labelColor=000000" alt="macOS 14.0+" />
+    <img src="https://img.shields.io/badge/macOS-14.0%2B-f7a41d?labelColor=000000" alt="macOS 14.0+" />
   </p>
 </div>
 

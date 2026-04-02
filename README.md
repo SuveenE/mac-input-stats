@@ -2,7 +2,9 @@
   <img src="MacInputStats/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="Mac Input Stats" width="100" height="100">
   <h3 align="center">Mac Input Stats</h3>
   <p align="center">
-    A macOS menu bar app that tracks your daily input activity including keystrokes, clicks, scrolls, gestures, and talk time.
+    A macOS menu bar app that helps you understand how you use your Mac
+    <br />
+    through <b>typing</b>, <b>clicks</b>, <b>scrolling</b>, and <b>voice input</b>.
     <br />
     <br />
     <a href="https://github.com/SuveenE/mac-input-stats/releases/latest">
@@ -30,13 +32,6 @@
 3. Launch **Mac Input Stats** and grant **Input Monitoring** when prompted
 
    <img src="Input-monitoring-permissions.png" alt="Input Monitoring permission" width="480">
-
-## Permissions
-
-| Permission | Why |
-|---|---|
-| **Input Monitoring** | Monitor keyboard, mouse, and scroll events system-wide |
-| **Microphone** | Detect speech activity and estimate talk time |
 
 ## License
 

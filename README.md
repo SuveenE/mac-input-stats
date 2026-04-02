@@ -15,15 +15,9 @@
     </a>
     <img src="https://img.shields.io/badge/macOS-14.0%2B-f7a41d?labelColor=000000" alt="macOS 14.0+" />
   </p>
+  <br />
+  <img src="assets/menubar-widget.png" alt="Menu bar widget" width="272">
 </div>
-
-## About
-
-- **Menu bar widget** with a floating panel for quick-glance daily stats
-- **Per-app breakdown** of keystrokes, clicks, scrolls, screen time, and talk time
-- **Talk time detection** using CoreAudio microphone activity monitoring
-- **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
-- **Daily persistence** with a rolling 7-day history
 
 ## Install
 
@@ -32,6 +26,14 @@
 3. Launch **Mac Input Stats** and grant **Input Monitoring** when prompted
 
    <img src="assets/Input-monitoring-permissions.png" alt="Input Monitoring permission" width="480">
+
+## Features
+
+- **Menu bar widget** with a floating panel for quick-glance daily stats
+- **Per-app breakdown** of keystrokes, clicks, scrolls, screen time, and talk time
+- **Talk time detection** using CoreAudio microphone activity monitoring
+- **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
+- **Daily persistence** with a rolling 7-day history
 
 ## License
 

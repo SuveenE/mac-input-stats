@@ -31,13 +31,6 @@
 
    <img src="Input-monitoring-permissions.png" alt="Input Monitoring permission" width="480">
 
-## Permissions
-
-| Permission | Why |
-|---|---|
-| **Input Monitoring** | Monitor keyboard, mouse, and scroll events system-wide |
-| **Microphone** | Detect speech activity and estimate talk time |
-
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.

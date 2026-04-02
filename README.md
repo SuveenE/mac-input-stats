@@ -2,7 +2,9 @@
   <img src="MacInputStats/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="Mac Input Stats" width="100" height="100">
   <h3 align="center">Mac Input Stats</h3>
   <p align="center">
-    A macOS menu bar app that helps you understand how you use your Mac through typing, clicks, scrolling, and talk time.
+    A macOS menu bar app that helps you understand how you use your Mac
+    <br />
+    through <b>typing</b>, <b>clicks</b>, <b>scrolling</b>, and <b>talk time</b>.
     <br />
     <br />
     <a href="https://github.com/SuveenE/mac-input-stats/releases/latest">

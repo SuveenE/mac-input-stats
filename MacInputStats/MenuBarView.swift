@@ -299,7 +299,8 @@ struct MenuBarView: View {
 
     private var weeklyChart: some View {
         let days = store.recentDays(count: chartRange.dayCount)
-        let dateLabels = days.map { shortDate($0.date) }
+        let compactMode = chartRange.dayCount > 7
+        let dateLabels = days.map { chartLabel($0.date) }
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -313,55 +314,61 @@ struct MenuBarView: View {
 
             Chart {
                 ForEach(days) { day in
-                    let d = shortDate(day.date)
+                    let d = chartLabel(day.date)
                     let isHovered = hoveredDate == d
 
                     LineMark(x: .value("Date", d), y: .value("Count", day.keystrokes), series: .value("Metric", "Keystrokes"))
                         .foregroundStyle(by: .value("Metric", "Keystrokes"))
                         .interpolationMethod(.catmullRom)
-                    PointMark(x: .value("Date", d), y: .value("Count", day.keystrokes))
-                        .foregroundStyle(by: .value("Metric", "Keystrokes"))
-                        .symbolSize(isHovered ? 50 : 20)
-                        .annotation(position: .top, spacing: 2) {
-                            if isHovered {
-                                Text("\(day.keystrokes)")
-                                    .font(.system(size: 8).bold())
-                                    .foregroundStyle(.blue)
-                            }
-                        }
 
                     LineMark(x: .value("Date", d), y: .value("Count", day.pointerClicks), series: .value("Metric", "Clicks"))
                         .foregroundStyle(by: .value("Metric", "Clicks"))
                         .interpolationMethod(.catmullRom)
-                    PointMark(x: .value("Date", d), y: .value("Count", day.pointerClicks))
-                        .foregroundStyle(by: .value("Metric", "Clicks"))
-                        .symbolSize(isHovered ? 50 : 20)
-                        .annotation(position: .top, spacing: 2) {
-                            if isHovered {
-                                Text("\(day.pointerClicks)")
-                                    .font(.system(size: 8).bold())
-                                    .foregroundStyle(.orange)
-                            }
-                        }
 
                     LineMark(x: .value("Date", d), y: .value("Count", day.scrollEvents), series: .value("Metric", "Scrolls"))
                         .foregroundStyle(by: .value("Metric", "Scrolls"))
                         .interpolationMethod(.catmullRom)
-                    PointMark(x: .value("Date", d), y: .value("Count", day.scrollEvents))
-                        .foregroundStyle(by: .value("Metric", "Scrolls"))
-                        .symbolSize(isHovered ? 50 : 20)
-                        .annotation(position: .top, spacing: 2) {
-                            if isHovered {
-                                Text("\(day.scrollEvents)")
-                                    .font(.system(size: 8).bold())
-                                    .foregroundStyle(.green)
-                            }
-                        }
 
                     if isHovered {
                         RuleMark(x: .value("Date", d))
                             .foregroundStyle(.gray.opacity(0.3))
                             .lineStyle(StrokeStyle(dash: [4, 4]))
+                            .annotation(position: .top, spacing: 0, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
+                                VStack(spacing: 2) {
+                                    Text(shortDate(day.date))
+                                        .font(.system(size: 7))
+                                        .foregroundStyle(.primary.opacity(0.55))
+                                    HStack(spacing: 6) {
+                                        Text("\(day.keystrokes)").foregroundStyle(.blue)
+                                        Text("\(day.pointerClicks)").foregroundStyle(.orange)
+                                        Text("\(day.scrollEvents)").foregroundStyle(.green)
+                                    }
+                                    .font(.system(size: 8).bold().monospacedDigit())
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+                            }
+
+                        PointMark(x: .value("Date", d), y: .value("Count", day.keystrokes))
+                            .foregroundStyle(.blue)
+                            .symbolSize(30)
+                        PointMark(x: .value("Date", d), y: .value("Count", day.pointerClicks))
+                            .foregroundStyle(.orange)
+                            .symbolSize(30)
+                        PointMark(x: .value("Date", d), y: .value("Count", day.scrollEvents))
+                            .foregroundStyle(.green)
+                            .symbolSize(30)
+                    } else if !compactMode {
+                        PointMark(x: .value("Date", d), y: .value("Count", day.keystrokes))
+                            .foregroundStyle(.blue)
+                            .symbolSize(12)
+                        PointMark(x: .value("Date", d), y: .value("Count", day.pointerClicks))
+                            .foregroundStyle(.orange)
+                            .symbolSize(12)
+                        PointMark(x: .value("Date", d), y: .value("Count", day.scrollEvents))
+                            .foregroundStyle(.green)
+                            .symbolSize(12)
                     }
                 }
             }
@@ -371,6 +378,24 @@ struct MenuBarView: View {
                 "Scrolls": Color.green,
             ])
             .chartLegend(.hidden)
+            .chartXAxis {
+                AxisMarks(values: .automatic) { value in
+                    AxisGridLine()
+                    if compactMode {
+                        AxisValueLabel() {
+                            if let label = value.as(String.self) {
+                                if shouldShowXLabel(label, in: dateLabels) {
+                                    Text(label)
+                                        .font(.system(size: 7))
+                                }
+                            }
+                        }
+                    } else {
+                        AxisValueLabel()
+                            .font(.system(size: 8))
+                    }
+                }
+            }
             .chartOverlay { proxy in
                 GeometryReader { geo in
                     Rectangle()
@@ -416,40 +441,53 @@ struct MenuBarView: View {
         }
     }
 
-    // MARK: - Talk Time (7 Days)
+    // MARK: - Talk Time
 
     private var talkTimeSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let days = store.recentDays(count: chartRange.dayCount)
+        let compactMode = chartRange.dayCount > 7
+        let labels = days.map { chartLabel($0.date) }
+
+        return VStack(alignment: .leading, spacing: 6) {
             Text("Talk Time")
                 .font(.headline)
 
-            let days = store.recentDays(count: chartRange.dayCount)
-            let maxSeconds = max(days.map { $0.talkDurationSeconds }.max() ?? 1, 1)
-
-            HStack(alignment: .bottom, spacing: 4) {
+            Chart {
                 ForEach(days) { day in
-                    let secs = day.talkDurationSeconds
-                    let ratio = CGFloat(secs / maxSeconds)
-                    let barHeight = max(ratio * 40, secs > 0 ? 3 : 0)
-
-                    VStack(spacing: 3) {
-                        Spacer(minLength: 0)
-                        if secs > 0 {
-                            Text(shortDuration(secs))
-                                .font(.system(size: 8).monospacedDigit())
-                                .foregroundStyle(.primary.opacity(0.55))
-                        }
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(.blue.opacity(0.4))
-                            .frame(height: barHeight)
-                        Text(shortDate(day.date))
-                            .font(.system(size: 8))
-                            .foregroundStyle(.primary.opacity(0.55))
-                    }
-                    .frame(maxWidth: .infinity)
+                    let d = chartLabel(day.date)
+                    BarMark(
+                        x: .value("Date", d),
+                        y: .value("Duration", day.talkDurationSeconds / 60)
+                    )
+                    .foregroundStyle(.blue.opacity(0.4))
+                    .cornerRadius(2)
                 }
             }
-            .frame(height: 58)
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let mins = value.as(Double.self) {
+                            Text(talkAxisLabel(mins))
+                                .font(.system(size: 7))
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let label = value.as(String.self) {
+                            if !compactMode || shouldShowXLabel(label, in: labels) {
+                                Text(label)
+                                    .font(.system(size: 7))
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(height: 60)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -506,6 +544,37 @@ struct MenuBarView: View {
         let day = parts[2]
         guard monthIndex >= 1, monthIndex <= 12 else { return dateString }
         return "\(months[monthIndex]) \(day)"
+    }
+
+    /// Compact label for chart x-axis: "Apr 2" for <=7 days, "2" for longer ranges
+    private func chartLabel(_ dateString: String) -> String {
+        if chartRange.dayCount <= 7 {
+            return shortDate(dateString)
+        }
+        let parts = dateString.split(separator: "-")
+        guard parts.count == 3 else { return dateString }
+        let day = Int(parts[2]) ?? 0
+        let months = ["", "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        let monthIndex = Int(parts[1]) ?? 0
+        // Show "Mon D" on 1st of month, otherwise just day number
+        if day == 1, monthIndex >= 1, monthIndex <= 12 {
+            return "\(months[monthIndex]) 1"
+        }
+        return "\(day)"
+    }
+
+    /// Only show every Nth x-axis label to avoid crowding
+    private func shouldShowXLabel(_ label: String, in allLabels: [String]) -> Bool {
+        guard let idx = allLabels.firstIndex(of: label) else { return false }
+        let step = chartRange.dayCount <= 14 ? 2 : 5
+        return idx % step == 0 || idx == allLabels.count - 1
+    }
+
+    private func talkAxisLabel(_ minutes: Double) -> String {
+        if minutes >= 60 {
+            return "\(Int(minutes / 60))h"
+        }
+        return "\(Int(minutes))m"
     }
 
     private func shortDuration(_ seconds: Double) -> String {

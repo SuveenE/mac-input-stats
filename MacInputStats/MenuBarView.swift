@@ -167,7 +167,8 @@ struct MenuBarView: View {
                 Text(fact)
                     .font(.caption)
                     .foregroundStyle(.primary.opacity(0.55))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 8)
                     .padding(.top, 6)
             }

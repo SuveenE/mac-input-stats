@@ -406,6 +406,7 @@ struct MenuBarView: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 3)
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+                                .offset(y: 30)
                             }
 
                         PointMark(x: .value("Date", d), y: .value("Count", day.keystrokes))

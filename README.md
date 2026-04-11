@@ -35,6 +35,14 @@
 - **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
 - **Daily persistence** with a rolling 7-day history
 
+## Data Storage
+
+All data is stored locally in `UserDefaults` — nothing is sent to any server. The plist file lives at:
+
+```
+~/Library/Preferences/com.suveene.MacInputStats.plist
+```
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.

@@ -58,12 +58,13 @@ private enum FunFact {
             }
         }
 
-        if stats.scrollEvents > 0 {
-            let screenfuls = (stats.scrollEvents * pixelsPerScroll) / screenHeight
-            if screenfuls >= 1 {
-                facts.append("📜 You moved through about \(screenfuls) screenful\(screenfuls == 1 ? "" : "s") of content today.")
-            }
-        }
+        // TODO: bring back scroll fun fact later
+        // if stats.scrollEvents > 0 {
+        //     let screenfuls = (stats.scrollEvents * pixelsPerScroll) / screenHeight
+        //     if screenfuls >= 1 {
+        //         facts.append("📜 You moved through about \(screenfuls) screenful\(screenfuls == 1 ? "" : "s") of content today.")
+        //     }
+        // }
 
         guard !facts.isEmpty else { return nil }
         // Deterministic pick based on date string so it stays stable within the day

@@ -46,7 +46,7 @@ private enum FunFact {
             let pages = Double(stats.keystrokes) / Double(keysPerPage)
             if pages >= 1 {
                 let formatted = NumberFormatter.localizedString(from: NSNumber(value: stats.keystrokes), number: .decimal)
-                facts.append("You typed \(formatted) keys today. That's like writing about \(Int(pages.rounded())) page\(Int(pages.rounded()) == 1 ? "" : "s").")
+                facts.append("✍️ You typed \(formatted) keys today. That's like writing about \(Int(pages.rounded())) page\(Int(pages.rounded()) == 1 ? "" : "s").")
             }
         }
 
@@ -54,14 +54,14 @@ private enum FunFact {
             let clickMins = (Double(stats.pointerClicks) * secondsPerClick) / 60
             if clickMins >= 1 {
                 let formatted = NumberFormatter.localizedString(from: NSNumber(value: stats.pointerClicks), number: .decimal)
-                facts.append("You clicked \(formatted) times. That's like tapping your desk for about \(Int(clickMins.rounded())) minute\(Int(clickMins.rounded()) == 1 ? "" : "s").")
+                facts.append("🥁 You clicked \(formatted) times. That's like tapping your desk for about \(Int(clickMins.rounded())) minute\(Int(clickMins.rounded()) == 1 ? "" : "s").")
             }
         }
 
         if stats.scrollEvents > 0 {
             let screenfuls = (stats.scrollEvents * pixelsPerScroll) / screenHeight
             if screenfuls >= 1 {
-                facts.append("You moved through about \(screenfuls) screenful\(screenfuls == 1 ? "" : "s") of content today.")
+                facts.append("📜 You moved through about \(screenfuls) screenful\(screenfuls == 1 ? "" : "s") of content today.")
             }
         }
 

@@ -46,7 +46,8 @@ private enum FunFact {
             let pages = Double(stats.keystrokes) / Double(keysPerPage)
             if pages >= 1 {
                 let formatted = NumberFormatter.localizedString(from: NSNumber(value: stats.keystrokes), number: .decimal)
-                facts.append("✍️ You typed \(formatted) keys today. That's like writing about \(Int(pages.rounded())) page\(Int(pages.rounded()) == 1 ? "" : "s").")
+                let fullPages = Int(pages.rounded())
+                facts.append("✍️ You typed \(formatted) keys today. That's about writing \(fullPages) full page\(fullPages == 1 ? "" : "s").")
             }
         }
 
@@ -169,6 +170,8 @@ struct MenuBarView: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.primary.opacity(0.7))
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)

@@ -18,6 +18,11 @@
 		AAA00009 /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011; };
 		AAA00010 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = PKG00002 /* Sparkle */; };
 		AAA00011 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012; };
+		AAA00012 /* ClaudeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013; };
+		AAA00013 /* ClaudeSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014; };
+		AAA00014 /* HookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00015; };
+		AAA00015 /* ClaudeSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00016; };
+		AAA00016 /* AgentSpriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +49,11 @@
 		BBB00010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BBB00011 /* FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanel.swift; sourceTree = "<group>"; };
 		BBB00012 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		BBB00013 /* ClaudeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeModels.swift; sourceTree = "<group>"; };
+		BBB00014 /* ClaudeSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeSocketServer.swift; sourceTree = "<group>"; };
+		BBB00015 /* HookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstaller.swift; sourceTree = "<group>"; };
+		BBB00016 /* ClaudeSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeSessionStore.swift; sourceTree = "<group>"; };
+		BBB00017 /* AgentSpriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSpriteView.swift; sourceTree = "<group>"; };
 		CCC00001 /* MacInputStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacInputStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +78,11 @@
 				BBB00006 /* MenuBarView.swift */,
 				BBB00011 /* FloatingPanel.swift */,
 				BBB00012 /* OnboardingView.swift */,
+				BBB00013 /* ClaudeModels.swift */,
+				BBB00014 /* ClaudeSocketServer.swift */,
+				BBB00015 /* HookInstaller.swift */,
+				BBB00016 /* ClaudeSessionStore.swift */,
+				BBB00017 /* AgentSpriteView.swift */,
 				BBB00008 /* Assets.xcassets */,
 				BBB00009 /* MacInputStats.entitlements */,
 				BBB00010 /* Info.plist */,
@@ -181,6 +196,11 @@
 				AAA00007 /* Models.swift in Sources */,
 				AAA00009 /* FloatingPanel.swift in Sources */,
 				AAA00011 /* OnboardingView.swift in Sources */,
+				AAA00012 /* ClaudeModels.swift in Sources */,
+				AAA00013 /* ClaudeSocketServer.swift in Sources */,
+				AAA00014 /* HookInstaller.swift in Sources */,
+				AAA00015 /* ClaudeSessionStore.swift in Sources */,
+				AAA00016 /* AgentSpriteView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

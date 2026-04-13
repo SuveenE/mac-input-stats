@@ -27,6 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         userDriverDelegate: nil
     )
 
+    // Claude Code activity tracking
+    let claudeStore = ClaudeSessionStore()
+    private var claudeServer: ClaudeSocketServer?
+
     private var statusItem: NSStatusItem!
     private var panel: FloatingPanel<AnyView>?
     private var onboardingWindow: NSWindow?
@@ -42,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         eventMonitors.stop()
         micMonitor.stop()
+        claudeServer?.stop()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -50,6 +55,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         eventMonitors.start()
         micMonitor.start()
+
+        // Claude Code activity tracking
+        HookInstaller.install()
+        claudeServer = ClaudeSocketServer { [weak self] event in
+            self?.claudeStore.handleEvent(event)
+        }
+        claudeServer?.start()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
@@ -115,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let content = MenuBarView(
             store: store,
             micMonitor: micMonitor,
+            claudeStore: claudeStore,
             updater: updaterController.updater,
             onClose: { [weak self] in self?.closePanel() },
             onOpenSettings: {

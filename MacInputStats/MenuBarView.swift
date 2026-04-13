@@ -81,6 +81,7 @@ private enum FunFact {
 struct MenuBarView: View {
     @ObservedObject var store: StatsStore
     @ObservedObject var micMonitor: SpeechDetector
+    @ObservedObject var claudeStore: ClaudeSessionStore
     var updater: SPUUpdater
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
@@ -88,6 +89,7 @@ struct MenuBarView: View {
     @State private var hoveredTalkDate: String?
     @State private var expandedApp: String?
     @AppStorage("statsExpanded") private var statsExpanded = false
+    @AppStorage("claudeExpanded") private var claudeExpanded = false
     @AppStorage("chartRange") private var chartRange: ChartRange = .sevenDays
 
     private let panelWidth: CGFloat = 340
@@ -103,6 +105,10 @@ struct MenuBarView: View {
             todayStats
             Divider().padding(.horizontal, 12)
             topAppsSection
+            if !claudeStore.activeSessions.isEmpty {
+                Divider().padding(.horizontal, 12)
+                claudeSection
+            }
             Divider().padding(.horizontal, 12)
             statsDisclosure
             if statsExpanded {
@@ -306,6 +312,207 @@ struct MenuBarView: View {
             Text(value)
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.primary.opacity(0.55))
+        }
+    }
+
+    // MARK: - Claude Sessions
+
+    private var claudeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    claudeExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Text("Claude Code")
+                        .font(.headline)
+                    Spacer()
+                    Text("\(claudeStore.activeSessions.count) session\(claudeStore.activeSessions.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.primary.opacity(0.55))
+                        .rotationEffect(.degrees(claudeExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Sprite island (always visible)
+            AgentSpriteView(store: claudeStore)
+                .frame(height: 55)
+
+            if claudeExpanded {
+                ForEach(claudeStore.activeSessions) { session in
+                    claudeSessionRow(session)
+                }
+
+                if !claudeStore.recentActivity.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Recent")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+
+                        ForEach(claudeStore.recentActivity.prefix(8)) { item in
+                            claudeActivityRow(item)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .animation(.easeInOut(duration: 0.2), value: claudeExpanded)
+    }
+
+    private func claudeSessionRow(_ session: ClaudeSession) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(claudeStateColor(session.spriteState))
+                    .frame(width: 7, height: 7)
+
+                Text(session.cwd.map { ($0 as NSString).lastPathComponent } ?? "Unknown")
+                    .font(.callout.weight(.medium))
+                    .lineLimit(1)
+
+                Spacer()
+
+                Text(claudeElapsed(since: session.startedAt))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Text(claudeStateLabel(session.spriteState))
+                    .font(.caption)
+                    .foregroundStyle(claudeStateColor(session.spriteState))
+
+                if let tool = session.lastTool, session.spriteState == .working {
+                    Text(tool)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Text("\(session.eventCount) events")
+                    .font(.caption)
+                    .foregroundStyle(.secondary.opacity(0.7))
+            }
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.primary.opacity(0.04))
+        )
+    }
+
+    private func claudeActivityRow(_ item: ActivityItem) -> some View {
+        HStack(spacing: 6) {
+            Text(claudeTimeString(item.timestamp))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary.opacity(0.6))
+                .frame(width: 36, alignment: .trailing)
+
+            Image(systemName: claudeEventIcon(item.event))
+                .font(.system(size: 8))
+                .foregroundStyle(claudeEventColor(item.event))
+                .frame(width: 12)
+
+            Text(claudeEventLabel(item.event))
+                .font(.caption)
+                .foregroundStyle(.primary.opacity(0.7))
+
+            if let tool = item.tool {
+                Text(tool)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 1)
+    }
+
+    // Claude helpers
+
+    private func claudeStateColor(_ state: SpriteState) -> Color {
+        switch state {
+        case .idle: return .secondary
+        case .working: return .cyan
+        case .sleeping: return .indigo
+        case .compacting: return .purple
+        case .needsPermission: return .orange
+        }
+    }
+
+    private func claudeStateLabel(_ state: SpriteState) -> String {
+        switch state {
+        case .idle: return "Idle"
+        case .working: return "Working"
+        case .sleeping: return "Ended"
+        case .compacting: return "Compacting"
+        case .needsPermission: return "Needs Permission"
+        }
+    }
+
+    private func claudeElapsed(since date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        let h = seconds / 3600
+        let m = (seconds % 3600) / 60
+        if h > 0 { return "\(h)h \(m)m" }
+        return "\(m)m"
+    }
+
+    private func claudeTimeString(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "HH:mm"
+        return fmt.string(from: date)
+    }
+
+    private func claudeEventIcon(_ event: ClaudeEventType) -> String {
+        switch event {
+        case .userPromptSubmit: return "text.bubble"
+        case .preToolUse: return "hammer"
+        case .postToolUse: return "checkmark.circle"
+        case .preCompact: return "arrow.triangle.2.circlepath"
+        case .sessionStart: return "play.circle"
+        case .sessionEnd: return "stop.circle"
+        case .stop, .subagentStop: return "pause.circle"
+        case .permissionRequest: return "hand.raised"
+        }
+    }
+
+    private func claudeEventColor(_ event: ClaudeEventType) -> Color {
+        switch event {
+        case .userPromptSubmit: return .blue
+        case .preToolUse: return .cyan
+        case .postToolUse: return .green
+        case .preCompact: return .purple
+        case .sessionStart: return .green
+        case .sessionEnd: return .red
+        case .stop, .subagentStop: return .secondary
+        case .permissionRequest: return .orange
+        }
+    }
+
+    private func claudeEventLabel(_ event: ClaudeEventType) -> String {
+        switch event {
+        case .userPromptSubmit: return "Prompt"
+        case .preToolUse: return "Tool"
+        case .postToolUse: return "Done"
+        case .preCompact: return "Compact"
+        case .sessionStart: return "Start"
+        case .sessionEnd: return "End"
+        case .stop: return "Stop"
+        case .subagentStop: return "Sub Stop"
+        case .permissionRequest: return "Permission"
         }
     }
 

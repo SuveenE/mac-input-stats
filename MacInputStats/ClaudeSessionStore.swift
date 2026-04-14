@@ -5,6 +5,31 @@ import Foundation
 final class ClaudeSessionStore: ObservableObject {
     @Published private(set) var sessions: [String: ClaudeSession] = [:]
     @Published private(set) var orderedSessionIds: [String] = []
+    @Published private(set) var days: [String: DailyClaudeStats] = [:]
+
+    #if DEBUG
+    private let userDefaultsKey = "ClaudeStats.days.v1.dev"
+    #else
+    private let userDefaultsKey = "ClaudeStats.days.v1"
+    #endif
+
+    private var currentDateKey: String = StatsStore.dateKey(for: Date())
+
+    init() {
+        load()
+        rolloverIfNeeded()
+    }
+
+    private func rolloverIfNeeded() {
+        let today = StatsStore.dateKey(for: Date())
+        if currentDateKey != today {
+            currentDateKey = today
+        }
+        if days[today] == nil {
+            days[today] = DailyClaudeStats(date: today)
+            save()
+        }
+    }
 
     /// All sessions that should be displayed (not yet cleaned up).
     var activeSessions: [ClaudeSession] {
@@ -16,21 +41,28 @@ final class ClaudeSessionStore: ObservableObject {
         sessions.values.reduce(0) { $0 + $1.toolCallCount }
     }
 
-    /// Total words spoken to Claude across all sessions.
+    /// Total words spoken to Claude today (persisted).
     var totalWords: Int {
-        sessions.values.reduce(0) { $0 + $1.wordCount }
+        days[currentDateKey]?.wordCount ?? 0
     }
 
-    /// Total non-idle duration across all sessions.
+    /// Total non-idle duration today: persisted + any in-progress active time.
     var totalDuration: TimeInterval {
+        let persisted = days[currentDateKey]?.executionDuration ?? 0
         let now = Date()
-        return sessions.values.reduce(0.0) { total, session in
-            var duration = session.activeDuration
-            if let activeStart = session.activeStartedAt {
-                duration += now.timeIntervalSince(activeStart)
-            }
-            return total + duration
+        let inProgress = sessions.values.reduce(0.0) { total, session in
+            guard let activeStart = session.activeStartedAt else { return total }
+            return total + now.timeIntervalSince(activeStart)
         }
+        return persisted + inProgress
+    }
+
+    func recentDays(count: Int) -> [DailyClaudeStats] {
+        days.values
+            .sorted { $0.date > $1.date }
+            .prefix(count)
+            .reversed()
+            .map { $0 }
     }
 
     /// Merged recent events across all sessions, sorted newest first.
@@ -46,6 +78,8 @@ final class ClaudeSessionStore: ObservableObject {
         let id = event.sessionId
         guard !id.isEmpty else { return }
 
+        rolloverIfNeeded()
+
         let newState = spriteState(for: event)
         let item = ActivityItem(
             timestamp: Date(),
@@ -58,13 +92,21 @@ final class ClaudeSessionStore: ObservableObject {
             ? Self.countWords(event.userPrompt)
             : 0
 
+        if words > 0 {
+            days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].wordCount += words
+            save()
+        }
+
         if var session = sessions[id] {
             // Track active duration on state transitions
             let wasActive = session.spriteState != .idle
             let isActive = newState != .idle
             if wasActive && !isActive, let start = session.activeStartedAt {
-                session.activeDuration += Date().timeIntervalSince(start)
+                let chunk = Date().timeIntervalSince(start)
+                session.activeDuration += chunk
                 session.activeStartedAt = nil
+                days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].executionDuration += chunk
+                save()
             } else if !wasActive && isActive {
                 session.activeStartedAt = Date()
             }
@@ -108,6 +150,15 @@ final class ClaudeSessionStore: ObservableObject {
 
         // Handle session end — mark sleeping, then remove after delay
         if event.event == .sessionEnd {
+            // Flush any remaining active duration before cleanup
+            if var session = sessions[id], let start = session.activeStartedAt {
+                let chunk = Date().timeIntervalSince(start)
+                session.activeDuration += chunk
+                session.activeStartedAt = nil
+                days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].executionDuration += chunk
+                sessions[id] = session
+                save()
+            }
             scheduleSessionCleanup(id: id)
         }
     }
@@ -133,6 +184,22 @@ final class ClaudeSessionStore: ObservableObject {
         case .sessionEnd:
             return .sleeping
         }
+    }
+
+    // MARK: - Persistence
+
+    private func save() {
+        if let data = try? JSONEncoder().encode(days) {
+            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        }
+    }
+
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              let decoded = try? JSONDecoder().decode([String: DailyClaudeStats].self, from: data) else {
+            return
+        }
+        days = decoded
     }
 
     // MARK: - Helpers

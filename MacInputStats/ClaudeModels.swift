@@ -90,6 +90,19 @@ enum SpriteState: Equatable {
     case needsPermission
 }
 
+// MARK: - Daily Persisted Stats
+
+struct DailyClaudeStats: Codable, Identifiable {
+    var id: String { date }
+    let date: String
+    var executionDuration: TimeInterval = 0
+    var wordCount: Int = 0
+
+    init(date: String) {
+        self.date = date
+    }
+}
+
 // MARK: - Session Model
 
 struct ClaudeSession: Identifiable {

@@ -169,6 +169,11 @@ enum HookInstaller {
     try:
         input_data = json.load(sys.stdin)
         if isinstance(input_data, dict):
+            # Extract prompt for word counting on submit events
+            for key in ('prompt', 'message', 'content', 'text', 'query'):
+                if key in input_data and isinstance(input_data[key], str):
+                    output['user_prompt'] = input_data[key]
+                    break
             if 'filePath' in input_data:
                 output['tool'] = 'Read'
                 output['tool_input'] = {'file': input_data['filePath']}

@@ -341,7 +341,7 @@ struct MenuBarView: View {
     // MARK: - Claude Code
 
     private static let claudeColor = Color(red: 0xCB / 255.0, green: 0x64 / 255.0, blue: 0x41 / 255.0)
-    private static let cursorColor = Color(red: 0x00 / 255.0, green: 0x9B / 255.0, blue: 0xF5 / 255.0)
+    private static let cursorColor = Color.black
 
     private var claudeSection: some View {
         VStack(alignment: .leading, spacing: 8) {

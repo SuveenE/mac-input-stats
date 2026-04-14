@@ -106,8 +106,9 @@ final class ClaudeSessionStore: ObservableObject {
 
         if var session = sessions[id] {
             // Track active duration on state transitions
-            let wasActive = session.spriteState != .idle
-            let isActive = newState != .idle
+            // Only count states where Claude is actually executing, not waiting for user
+            let wasActive = session.spriteState == .working || session.spriteState == .compacting
+            let isActive = newState == .working || newState == .compacting
             if wasActive && !isActive, let start = session.activeStartedAt {
                 let chunk = Date().timeIntervalSince(start)
                 session.activeDuration += chunk
@@ -152,7 +153,7 @@ final class ClaudeSessionStore: ObservableObject {
             session.eventCount = 1
             session.toolCallCount = event.event == .preToolUse ? 1 : 0
             session.wordCount = words
-            if newState != .idle {
+            if newState == .working || newState == .compacting {
                 session.activeStartedAt = Date()
             }
             if let tool = event.tool {

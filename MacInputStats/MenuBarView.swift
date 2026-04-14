@@ -316,7 +316,7 @@ struct MenuBarView: View {
 
     // MARK: - Claude Code
 
-    private static let claudeColor = Color(red: 0.76, green: 0.55, blue: 0.35)
+    private static let claudeColor = Color(red: 0xCB / 255.0, green: 0x64 / 255.0, blue: 0x41 / 255.0)
 
     private var claudeSection: some View {
         VStack(alignment: .leading, spacing: 8) {

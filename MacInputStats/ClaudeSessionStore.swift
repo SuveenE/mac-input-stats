@@ -57,6 +57,11 @@ final class ClaudeSessionStore: ObservableObject {
         return persisted + inProgress
     }
 
+    /// Top projects for today, sorted by execution duration.
+    var todayTopProjects: [(name: String, stats: ClaudeProjectStats)] {
+        days[currentDateKey]?.topProjects ?? []
+    }
+
     func recentDays(count: Int) -> [DailyClaudeStats] {
         days.values
             .sorted { $0.date > $1.date }
@@ -94,7 +99,6 @@ final class ClaudeSessionStore: ObservableObject {
 
         if words > 0 {
             days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].wordCount += words
-            save()
         }
 
         if var session = sessions[id] {
@@ -106,7 +110,9 @@ final class ClaudeSessionStore: ObservableObject {
                 session.activeDuration += chunk
                 session.activeStartedAt = nil
                 days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].executionDuration += chunk
-                save()
+                if let project = Self.projectName(for: session.cwd) {
+                    days[currentDateKey]?.perProject[project, default: ClaudeProjectStats()].executionDuration += chunk
+                }
             } else if !wasActive && isActive {
                 session.activeStartedAt = Date()
             }
@@ -121,6 +127,12 @@ final class ClaudeSessionStore: ObservableObject {
             }
             if event.event == .preToolUse {
                 session.toolCallCount += 1
+                if let project = Self.projectName(for: session.cwd) {
+                    days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].perProject[project, default: ClaudeProjectStats()].toolCallCount += 1
+                }
+            }
+            if words > 0, let project = Self.projectName(for: session.cwd) {
+                days[currentDateKey]?.perProject[project, default: ClaudeProjectStats()].wordCount += words
             }
             if let cwd = event.cwd, !cwd.isEmpty {
                 session.cwd = cwd
@@ -143,10 +155,19 @@ final class ClaudeSessionStore: ObservableObject {
             if let tool = event.tool {
                 session.lastTool = tool
             }
+            let project = Self.projectName(for: session.cwd)
+            if event.event == .preToolUse, let project {
+                days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].perProject[project, default: ClaudeProjectStats()].toolCallCount += 1
+            }
+            if words > 0, let project {
+                days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].perProject[project, default: ClaudeProjectStats()].wordCount += words
+            }
             session.appendEvent(item)
             sessions[id] = session
             orderedSessionIds.append(id)
         }
+
+        save()
 
         // Handle session end — mark sleeping, then remove after delay
         if event.event == .sessionEnd {
@@ -156,6 +177,9 @@ final class ClaudeSessionStore: ObservableObject {
                 session.activeDuration += chunk
                 session.activeStartedAt = nil
                 days[currentDateKey, default: DailyClaudeStats(date: currentDateKey)].executionDuration += chunk
+                if let project = Self.projectName(for: session.cwd) {
+                    days[currentDateKey]?.perProject[project, default: ClaudeProjectStats()].executionDuration += chunk
+                }
                 sessions[id] = session
                 save()
             }
@@ -203,6 +227,11 @@ final class ClaudeSessionStore: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    static func projectName(for cwd: String?) -> String? {
+        guard let cwd, !cwd.isEmpty else { return nil }
+        return URL(fileURLWithPath: cwd).lastPathComponent
+    }
 
     private static func countWords(_ text: String?) -> Int {
         guard let text, !text.isEmpty else { return 0 }

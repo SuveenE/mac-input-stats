@@ -92,14 +92,28 @@ enum SpriteState: Equatable {
 
 // MARK: - Daily Persisted Stats
 
+struct ClaudeProjectStats: Codable {
+    var executionDuration: TimeInterval = 0
+    var wordCount: Int = 0
+    var toolCallCount: Int = 0
+}
+
 struct DailyClaudeStats: Codable, Identifiable {
     var id: String { date }
     let date: String
     var executionDuration: TimeInterval = 0
     var wordCount: Int = 0
+    var perProject: [String: ClaudeProjectStats] = [:]
 
     init(date: String) {
         self.date = date
+    }
+
+    /// Projects sorted by execution duration descending.
+    var topProjects: [(name: String, stats: ClaudeProjectStats)] {
+        perProject
+            .map { (name: $0.key, stats: $0.value) }
+            .sorted { $0.stats.executionDuration > $1.stats.executionDuration }
     }
 }
 

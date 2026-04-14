@@ -102,12 +102,12 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
             headerBar
             todayStats
-            Divider().padding(.horizontal, 12)
-            topAppsSection
             if claudeStore.totalDuration > 0 || claudeStore.totalWords > 0 || !claudeStore.activeSessions.isEmpty {
                 Divider().padding(.horizontal, 12)
                 claudeSection
             }
+            Divider().padding(.horizontal, 12)
+            topAppsSection
             Divider().padding(.horizontal, 12)
             statsDisclosure
             if statsExpanded {
@@ -353,6 +353,12 @@ struct MenuBarView: View {
                                label: "Words to Claude")
             }
             .fixedSize(horizontal: false, vertical: true)
+
+            // TODO: re-enable project breakdown later
+            // let projects = claudeStore.todayTopProjects
+            // if !projects.isEmpty {
+            //     ...
+            // }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -382,6 +388,36 @@ struct MenuBarView: View {
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func claudeProjectRow(name: String, stats: ClaudeProjectStats, maxDuration: TimeInterval) -> some View {
+        VStack(spacing: 3) {
+            HStack(spacing: 6) {
+                Text(name)
+                    .font(.body)
+                    .lineLimit(1)
+                Spacer()
+                Text(AppStats.formatDuration(stats.executionDuration))
+                    .font(.body.monospacedDigit())
+                    .foregroundStyle(.primary.opacity(0.55))
+            }
+
+            GeometryReader { geo in
+                let ratio = CGFloat(stats.executionDuration) / CGFloat(Swift.max(maxDuration, 1))
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Self.claudeColor.opacity(0.3))
+                    .frame(width: geo.size.width * ratio, height: 3)
+            }
+            .frame(height: 3)
+
+            HStack(spacing: 16) {
+                appDetailItem(icon: "hammer", value: "\(stats.toolCallCount)")
+                appDetailItem(icon: "text.bubble", value: "\(stats.wordCount)")
+            }
+            .padding(.top, 2)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
     }
 
     // MARK: - Stats Disclosure

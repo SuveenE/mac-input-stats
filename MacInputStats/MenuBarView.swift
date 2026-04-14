@@ -104,7 +104,7 @@ struct MenuBarView: View {
             todayStats
             Divider().padding(.horizontal, 12)
             topAppsSection
-            if !claudeStore.activeSessions.isEmpty {
+            if claudeStore.totalDuration > 0 || claudeStore.totalWords > 0 || !claudeStore.activeSessions.isEmpty {
                 Divider().padding(.horizontal, 12)
                 claudeSection
             }

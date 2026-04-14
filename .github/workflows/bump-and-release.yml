@@ -1,0 +1,162 @@
+name: Bump Version & Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.0.7)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bump-and-release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump version in project
+        run: |
+          # Increment CURRENT_PROJECT_VERSION
+          CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' MacInputStats.xcodeproj/project.pbxproj | sed 's/[^0-9]//g')
+          NEXT=$((CURRENT + 1))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = ${CURRENT};/CURRENT_PROJECT_VERSION = ${NEXT};/g" MacInputStats.xcodeproj/project.pbxproj
+
+          # Update MARKETING_VERSION
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${{ github.event.inputs.version }};/g" MacInputStats.xcodeproj/project.pbxproj
+
+          echo "APP_BUILD=$NEXT" >> $GITHUB_ENV
+          echo "Bumped to v${{ github.event.inputs.version }} (build $NEXT)"
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Import Code-Signing Certificate
+        uses: Apple-Actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+
+      - name: Resolve Swift packages
+        run: xcodebuild -project MacInputStats.xcodeproj -scheme MacInputStats -resolvePackageDependencies
+
+      - name: Archive Release
+        run: >
+          xcodebuild
+          -project MacInputStats.xcodeproj
+          -scheme MacInputStats
+          -configuration Release
+          -archivePath $RUNNER_TEMP/MacInputStats.xcarchive
+          -derivedDataPath build/
+          archive
+
+      - name: Codesign app
+        run: |
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
+          codesign --deep --force --options runtime --timestamp \
+            --sign "Developer ID Application: Suveen Ellawela (Z98F8W9LD3)" "$APP_PATH"
+
+      - name: Notarize app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
+          ditto -c -k --keepParent "$APP_PATH" $RUNNER_TEMP/MacInputStats-notarize.zip
+          xcrun notarytool submit $RUNNER_TEMP/MacInputStats-notarize.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait --timeout 20m
+          xcrun stapler staple "$APP_PATH"
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
+          mkdir -p $RUNNER_TEMP/dmg-source
+          cp -R "$APP_PATH" $RUNNER_TEMP/dmg-source/
+          create-dmg \
+            --volname "Mac Input Stats" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "MacInputStats.app" 150 185 \
+            --app-drop-link 450 185 \
+            MacInputStats.dmg \
+            $RUNNER_TEMP/dmg-source/
+
+      - name: Sign and notarize DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          codesign --force --timestamp \
+            --sign "Developer ID Application: Suveen Ellawela (Z98F8W9LD3)" MacInputStats.dmg
+          xcrun notarytool submit MacInputStats.dmg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait --timeout 20m
+          xcrun stapler staple MacInputStats.dmg
+
+      - name: Sparkle sign
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          SIGN_TOOL=$(find build/SourcePackages/artifacts -name "sign_update" -type f | head -1)
+          SIGNATURE=$("$SIGN_TOOL" MacInputStats.dmg --ed-key-file <(echo -n "$SPARKLE_PRIVATE_KEY") 2>&1)
+          ED_SIG=$(echo "$SIGNATURE" | grep -o 'sparkle:edSignature="[^"]*"' | sed 's/sparkle:edSignature="//;s/"//')
+          LENGTH=$(echo "$SIGNATURE" | grep -o 'length="[^"]*"' | sed 's/length="//;s/"//')
+          echo "ED_SIGNATURE=$ED_SIG" >> $GITHUB_ENV
+          echo "DMG_LENGTH=$LENGTH" >> $GITHUB_ENV
+
+      - name: Update appcast.xml
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
+          cat > appcast.xml << EOF
+          <?xml version="1.0" standalone="yes"?>
+          <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+            <channel>
+              <title>Mac Input Stats</title>
+              <item>
+                <title>Version ${VERSION}</title>
+                <sparkle:version>${APP_BUILD}</sparkle:version>
+                <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+                <pubDate>${PUB_DATE}</pubDate>
+                <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+                <enclosure
+                  url="https://github.com/SuveenE/mac-input-stats/releases/download/v${VERSION}/MacInputStats.dmg"
+                  length="${DMG_LENGTH}"
+                  type="application/octet-stream"
+                  sparkle:edSignature="${ED_SIGNATURE}"
+                />
+              </item>
+            </channel>
+          </rss>
+          EOF
+          sed -i '' 's/^          //' appcast.xml
+
+      - name: Commit and tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add MacInputStats.xcodeproj/project.pbxproj appcast.xml
+          git commit -m "v${VERSION}"
+          git tag "v${VERSION}"
+          git push origin main --tags
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          files: MacInputStats.dmg
+          generate_release_notes: true

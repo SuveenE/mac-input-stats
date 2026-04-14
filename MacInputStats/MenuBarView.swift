@@ -156,19 +156,15 @@ struct MenuBarView: View {
     // MARK: - Today Stats
 
     private var todayStats: some View {
-        VStack(spacing: 2) {
-            statRow(icon: "keyboard",
-                    value: "\(store.today.keystrokes)",
-                    label: "Keystrokes")
-            statRow(icon: "cursorarrow.click.2",
-                    value: "\(store.today.pointerClicks)",
-                    label: "Clicks")
-            statRow(icon: "scroll",
-                    value: "\(store.today.scrollEvents)",
-                    label: "Scrolls")
-            statRow(icon: micMonitor.micInUse ? "mic.fill" : "waveform",
-                    value: liveTalkTime,
-                    label: "Talk time")
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                statCell(icon: "keyboard", value: "\(store.today.keystrokes)", label: "Keystrokes")
+                statCell(icon: "cursorarrow.click.2", value: "\(store.today.pointerClicks)", label: "Clicks")
+            }
+            HStack(spacing: 10) {
+                statCell(icon: "scroll", value: "\(store.today.scrollEvents)", label: "Scrolls")
+                statCell(icon: micMonitor.micInUse ? "mic.fill" : "waveform", value: liveTalkTime, label: "Talk time")
+            }
 
             if let fact = FunFact.forDay(store.today) {
                 Text(fact)
@@ -182,11 +178,34 @@ struct MenuBarView: View {
                     .padding(.vertical, 8)
                     .background(.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .padding(.horizontal, 4)
-                    .padding(.top, 8)
+                    .padding(.top, 4)
             }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private func statCell(icon: String, value: String, label: String, tint: Color = .blue) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(tint, in: Circle())
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.primary.opacity(0.5))
+            }
+
+            Spacer()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func statRow(icon: String, value: String, label: String, tint: Color = .blue) -> some View {

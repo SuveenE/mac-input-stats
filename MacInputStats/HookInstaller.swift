@@ -168,6 +168,7 @@ enum HookInstaller {
         // Claude Code hook format: each event has an array of matcher groups
         // {"EventName": [{"matcher": "", "hooks": [{"type": "command", "command": "..."}]}]}
         var hooks = settings["hooks"] as? [String: Any] ?? [:]
+        var needsWrite = false
 
         for eventName in hookEvents {
             var matcherGroups = hooks[eventName] as? [[String: Any]] ?? []
@@ -187,8 +188,11 @@ enum HookInstaller {
                 ]
                 matcherGroups.append(matcherGroup)
                 hooks[eventName] = matcherGroups
+                needsWrite = true
             }
         }
+
+        guard needsWrite else { return }
 
         settings["hooks"] = hooks
 

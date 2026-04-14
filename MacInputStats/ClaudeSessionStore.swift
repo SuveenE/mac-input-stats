@@ -7,11 +7,9 @@ final class ClaudeSessionStore: ObservableObject {
     @Published private(set) var orderedSessionIds: [String] = []
     @Published private(set) var days: [String: DailyClaudeStats] = [:]
 
-    #if DEBUG
-    private let userDefaultsKey = "ClaudeStats.days.v1.dev"
-    #else
     private let userDefaultsKey = "ClaudeStats.days.v1"
-    #endif
+    /// Always read/write the prod UserDefaults domain so dev and release share Claude stats.
+    private let defaults = UserDefaults(suiteName: "com.suveene.MacInputStats")!
 
     private var currentDateKey: String = StatsStore.dateKey(for: Date())
 
@@ -190,12 +188,12 @@ final class ClaudeSessionStore: ObservableObject {
 
     private func save() {
         if let data = try? JSONEncoder().encode(days) {
-            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            defaults.set(data, forKey: userDefaultsKey)
         }
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        guard let data = defaults.data(forKey: userDefaultsKey),
               let decoded = try? JSONDecoder().decode([String: DailyClaudeStats].self, from: data) else {
             return
         }

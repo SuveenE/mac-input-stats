@@ -100,6 +100,9 @@ struct ClaudeSession: Identifiable {
     var lastTool: String?
     var eventCount: Int = 0
     var toolCallCount: Int = 0
+    var wordCount: Int = 0
+    var activeDuration: TimeInterval = 0
+    var activeStartedAt: Date?
     var startedAt: Date = Date()
     var lastActivityAt: Date = Date()
     var interactive: Bool = true

@@ -326,17 +326,13 @@ struct MenuBarView: View {
                 .padding(.bottom, 2)
 
             VStack(spacing: 2) {
-                statRow(icon: "terminal",
-                        value: "\(claudeStore.activeSessions.count)",
-                        label: "Active sessions",
-                        tint: Self.claudeColor)
-                statRow(icon: "hammer",
-                        value: "\(claudeStore.totalToolCalls)",
-                        label: "Tool calls",
-                        tint: Self.claudeColor)
                 statRow(icon: "clock",
                         value: AppStats.formatDuration(claudeStore.totalDuration),
-                        label: "Total duration",
+                        label: "Duration today",
+                        tint: Self.claudeColor)
+                statRow(icon: "text.bubble",
+                        value: formatWordCount(claudeStore.totalWords),
+                        label: "Words to Claude",
                         tint: Self.claudeColor)
             }
         }
@@ -726,6 +722,13 @@ struct MenuBarView: View {
             return "\(m)m \(s)s"
         }
         return "\(s)s"
+    }
+
+    private func formatWordCount(_ count: Int) -> String {
+        if count >= 1000 {
+            return String(format: "%.1fk", Double(count) / 1000.0)
+        }
+        return "\(count)"
     }
 
     private func showQuitAlert() {

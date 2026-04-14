@@ -16,10 +16,21 @@ final class ClaudeSessionStore: ObservableObject {
         sessions.values.reduce(0) { $0 + $1.toolCallCount }
     }
 
-    /// Total duration across all active sessions.
+    /// Total words spoken to Claude across all sessions.
+    var totalWords: Int {
+        sessions.values.reduce(0) { $0 + $1.wordCount }
+    }
+
+    /// Total non-idle duration across all sessions.
     var totalDuration: TimeInterval {
         let now = Date()
-        return sessions.values.reduce(0.0) { $0 + now.timeIntervalSince($1.startedAt) }
+        return sessions.values.reduce(0.0) { total, session in
+            var duration = session.activeDuration
+            if let activeStart = session.activeStartedAt {
+                duration += now.timeIntervalSince(activeStart)
+            }
+            return total + duration
+        }
     }
 
     /// Merged recent events across all sessions, sorted newest first.
@@ -43,11 +54,26 @@ final class ClaudeSessionStore: ObservableObject {
             status: event.status
         )
 
+        let words = event.event == .userPromptSubmit
+            ? Self.countWords(event.userPrompt)
+            : 0
+
         if var session = sessions[id] {
+            // Track active duration on state transitions
+            let wasActive = session.spriteState != .idle
+            let isActive = newState != .idle
+            if wasActive && !isActive, let start = session.activeStartedAt {
+                session.activeDuration += Date().timeIntervalSince(start)
+                session.activeStartedAt = nil
+            } else if !wasActive && isActive {
+                session.activeStartedAt = Date()
+            }
+
             session.spriteState = newState
             session.lastEvent = event.event
             session.lastActivityAt = Date()
             session.eventCount += 1
+            session.wordCount += words
             if let tool = event.tool {
                 session.lastTool = tool
             }
@@ -68,6 +94,10 @@ final class ClaudeSessionStore: ObservableObject {
             session.interactive = event.interactive ?? true
             session.eventCount = 1
             session.toolCallCount = event.event == .preToolUse ? 1 : 0
+            session.wordCount = words
+            if newState != .idle {
+                session.activeStartedAt = Date()
+            }
             if let tool = event.tool {
                 session.lastTool = tool
             }
@@ -103,6 +133,17 @@ final class ClaudeSessionStore: ObservableObject {
         case .sessionEnd:
             return .sleeping
         }
+    }
+
+    // MARK: - Helpers
+
+    private static func countWords(_ text: String?) -> Int {
+        guard let text, !text.isEmpty else { return 0 }
+        var count = 0
+        text.enumerateSubstrings(in: text.startIndex..., options: [.byWords, .substringNotRequired]) { _, _, _, _ in
+            count += 1
+        }
+        return count
     }
 
     // MARK: - Session Cleanup

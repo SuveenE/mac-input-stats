@@ -345,18 +345,42 @@ struct MenuBarView: View {
                 .padding(.bottom, 2)
 
             HStack(spacing: 10) {
-                statCell(icon: "clock",
-                         value: AppStats.formatDuration(claudeStore.totalDuration),
-                         label: "Duration today",
-                         tint: Self.claudeColor)
-                statCell(icon: "text.bubble",
-                         value: formatWordCount(claudeStore.totalWords),
-                         label: "Words to Claude",
-                         tint: Self.claudeColor)
+                claudeStatCell(icon: "clock",
+                               value: AppStats.formatDuration(claudeStore.totalDuration),
+                               label: "Execution\nduration")
+                claudeStatCell(icon: "text.bubble",
+                               value: formatWordCount(claudeStore.totalWords),
+                               label: "Words to\nClaude")
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func claudeStatCell(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 26, height: 26)
+                    .background(Self.claudeColor, in: Circle())
+
+                Text(value)
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundStyle(.primary.opacity(0.5))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     // MARK: - Stats Disclosure

@@ -1,20 +1,28 @@
 import Foundation
 
-/// Installs the Claude Code hook script and registers it in settings.
+/// Installs hook scripts and registers them in settings for Claude Code and Cursor.
 enum HookInstaller {
-    private static let hookFileName = "claude-activity-hook.sh"
+    private static let claudeHookFileName = "claude-activity-hook.sh"
+    private static let cursorHookFileName = "cursor-activity-hook.sh"
 
-    private static var hooksDir: URL {
+    private static var claudeHooksDir: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude/hooks")
     }
 
-    private static var settingsPath: URL {
+    private static var claudeSettingsPath: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude/settings.json")
     }
 
-    private static let hookScript = """
+    private static var cursorHooksPath: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cursor/hooks.json")
+    }
+
+    // MARK: - Claude Code Hook Script
+
+    private static let claudeHookScript = """
     #!/bin/bash
     # Claude Code activity hook - forwards events via Unix socket
 
@@ -99,40 +107,134 @@ enum HookInstaller {
     "
     """
 
-    private static let hookEvents = [
+    // MARK: - Cursor Hook Script
+
+    private static let cursorHookScript = """
+    #!/bin/bash
+    # Cursor activity hook - forwards events via Unix socket to notchi
+    # Mirrors claude-activity-hook.sh but maps Cursor events to ClaudeEventType
+
+    SOCKET_PATH="/tmp/notchi.sock"
+
+    # Exit silently if socket doesn't exist (app not running)
+    [ -S "$SOCKET_PATH" ] || { cat > /dev/null 2>&1; exit 0; }
+
+    # Stable session ID: hash of workspace path + today's date so it persists
+    # across hook invocations but resets daily
+    SESSION_ID="cursor-$(echo "${PWD}-$(date +%Y-%m-%d)" | shasum | cut -c1-12)"
+
+    EVENT_TYPE="$1"
+
+    # Pass stdin directly to Python (avoids shell injection from $INPUT variable)
+    /usr/bin/python3 -c "
+    import json
+    import os
+    import socket
+    import sys
+
+    event_type = '$EVENT_TYPE'
+
+    # Map Cursor events to ClaudeEventType values that the app can decode
+    event_map = {
+        'beforeSubmitPrompt': 'UserPromptSubmit',
+        'afterFileEdit': 'PostToolUse',
+        'stop': 'Stop',
+        'beforeReadFile': 'PreToolUse',
+        'beforeShellExecution': 'PreToolUse',
+        'beforeMCPExecution': 'PreToolUse'
+    }
+
+    mapped_event = event_map.get(event_type)
+    if not mapped_event:
+        sys.exit(0)
+
+    status_map = {
+        'UserPromptSubmit': 'processing',
+        'PostToolUse': 'processing',
+        'Stop': 'waiting_for_input',
+        'PreToolUse': 'running_tool'
+    }
+
+    output = {
+        'session_id': '$SESSION_ID',
+        'cwd': os.getcwd(),
+        'event': mapped_event,
+        'status': status_map.get(mapped_event, 'unknown'),
+        'pid': None,
+        'tty': None,
+        'interactive': True
+    }
+
+    # Try to parse Cursor's JSON input from stdin for extra context
+    try:
+        input_data = json.load(sys.stdin)
+        if isinstance(input_data, dict):
+            if 'filePath' in input_data:
+                output['tool'] = 'Read'
+                output['tool_input'] = {'file': input_data['filePath']}
+            if 'command' in input_data:
+                output['tool'] = 'Bash'
+                output['tool_input'] = {'command': input_data['command']}
+    except:
+        pass
+
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect('$SOCKET_PATH')
+        sock.sendall(json.dumps(output).encode())
+        sock.close()
+    except:
+        pass
+    "
+    """
+
+    // MARK: - Hook Events
+
+    private static let claudeHookEvents = [
         "PreToolUse", "PostToolUse", "UserPromptSubmit",
         "Stop", "SubagentStop", "PreCompact",
         "SessionStart", "SessionEnd",
     ]
 
+    private static let cursorHookEvents = [
+        "beforeSubmitPrompt", "stop", "afterFileEdit",
+        "beforeReadFile", "beforeShellExecution", "beforeMCPExecution",
+    ]
+
+    // MARK: - Public API
+
     static func install() {
         do {
-            try installScript()
-            try registerHooks()
+            try installScript(fileName: claudeHookFileName, content: claudeHookScript, dir: claudeHooksDir)
+            try registerClaudeHooks()
         } catch {
-            print("[HookInstaller] Installation failed: \(error)")
+            print("[HookInstaller] Claude hook installation failed: \(error)")
+        }
+
+        do {
+            try installScript(fileName: cursorHookFileName, content: cursorHookScript, dir: claudeHooksDir)
+            try registerCursorHooks()
+        } catch {
+            print("[HookInstaller] Cursor hook installation failed: \(error)")
         }
     }
 
     // MARK: - Script Installation
 
-    private static func installScript() throws {
+    private static func installScript(fileName: String, content: String, dir: URL) throws {
         let fm = FileManager.default
 
-        // Ensure hooks directory exists
-        if !fm.fileExists(atPath: hooksDir.path) {
-            try fm.createDirectory(at: hooksDir, withIntermediateDirectories: true)
+        if !fm.fileExists(atPath: dir.path) {
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
         }
 
-        let scriptURL = hooksDir.appendingPathComponent(hookFileName)
+        let scriptURL = dir.appendingPathComponent(fileName)
         let existingContent = try? String(contentsOf: scriptURL, encoding: .utf8)
 
-        // Only write if content changed
-        if existingContent != hookScript {
-            try hookScript.write(to: scriptURL, atomically: true, encoding: .utf8)
+        if existingContent != content {
+            try content.write(to: scriptURL, atomically: true, encoding: .utf8)
         }
 
-        // Ensure executable
         var attrs = try fm.attributesOfItem(atPath: scriptURL.path)
         let perms = (attrs[.posixPermissions] as? Int) ?? 0
         if perms & 0o111 == 0 {
@@ -141,16 +243,15 @@ enum HookInstaller {
         }
     }
 
-    // MARK: - Hook Registration
+    // MARK: - Claude Code Hook Registration
 
-    private static func registerHooks() throws {
+    private static func registerClaudeHooks() throws {
         let fm = FileManager.default
-        let scriptPath = hooksDir.appendingPathComponent(hookFileName).path
+        let scriptPath = claudeHooksDir.appendingPathComponent(claudeHookFileName).path
 
-        // Read existing settings or start fresh
         var settings: [String: Any]
-        if fm.fileExists(atPath: settingsPath.path),
-           let data = try? Data(contentsOf: settingsPath),
+        if fm.fileExists(atPath: claudeSettingsPath.path),
+           let data = try? Data(contentsOf: claudeSettingsPath),
            let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         {
             settings = parsed
@@ -158,26 +259,22 @@ enum HookInstaller {
             settings = [:]
         }
 
-        // Build hook command
         let hookCommand: [String: Any] = [
             "type": "command",
             "command": scriptPath,
             "timeout": 5000,
         ]
 
-        // Claude Code hook format: each event has an array of matcher groups
-        // {"EventName": [{"matcher": "", "hooks": [{"type": "command", "command": "..."}]}]}
         var hooks = settings["hooks"] as? [String: Any] ?? [:]
         var needsWrite = false
 
-        for eventName in hookEvents {
+        for eventName in claudeHookEvents {
             var matcherGroups = hooks[eventName] as? [[String: Any]] ?? []
 
-            // Check if our hook is already registered in any matcher group
             let alreadyRegistered = matcherGroups.contains { group in
                 guard let groupHooks = group["hooks"] as? [[String: Any]] else { return false }
                 return groupHooks.contains { hook in
-                    (hook["command"] as? String)?.contains(hookFileName) == true
+                    (hook["command"] as? String)?.contains(claudeHookFileName) == true
                 }
             }
 
@@ -196,8 +293,51 @@ enum HookInstaller {
 
         settings["hooks"] = hooks
 
-        // Write back
         let data = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: settingsPath, options: .atomic)
+        try data.write(to: claudeSettingsPath, options: .atomic)
+    }
+
+    // MARK: - Cursor Hook Registration
+
+    private static func registerCursorHooks() throws {
+        let fm = FileManager.default
+        let scriptPath = claudeHooksDir.appendingPathComponent(cursorHookFileName).path
+
+        // Read existing hooks.json or start fresh
+        var root: [String: Any]
+        if fm.fileExists(atPath: cursorHooksPath.path),
+           let data = try? Data(contentsOf: cursorHooksPath),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        {
+            root = parsed
+        } else {
+            root = ["version": 1]
+        }
+
+        var hooks = root["hooks"] as? [String: Any] ?? [:]
+        var needsWrite = false
+
+        for eventName in cursorHookEvents {
+            var entries = hooks[eventName] as? [[String: Any]] ?? []
+
+            let alreadyRegistered = entries.contains { entry in
+                (entry["command"] as? String)?.contains(cursorHookFileName) == true
+            }
+
+            if !alreadyRegistered {
+                entries.append([
+                    "command": "\(scriptPath) \(eventName)",
+                ])
+                hooks[eventName] = entries
+                needsWrite = true
+            }
+        }
+
+        guard needsWrite else { return }
+
+        root["hooks"] = hooks
+
+        let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: cursorHooksPath, options: .atomic)
     }
 }

@@ -9,11 +9,16 @@ final class ClaudeSessionStore: ObservableObject {
 
     private let userDefaultsKey = "ClaudeStats.days.v1"
     /// Always read/write the prod UserDefaults domain so dev and release share Claude stats.
-    private let defaults = UserDefaults(suiteName: "com.suveene.MacInputStats")!
+    private let defaults: UserDefaults
+
+    private static func sharedDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "com.suveene.MacInputStats") ?? .standard
+    }
 
     private var currentDateKey: String = StatsStore.dateKey(for: Date())
 
     init() {
+        defaults = Self.sharedDefaults()
         load()
         rolloverIfNeeded()
     }

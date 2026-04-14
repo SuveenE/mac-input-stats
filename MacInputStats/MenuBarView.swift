@@ -189,13 +189,13 @@ struct MenuBarView: View {
         .padding(.vertical, 8)
     }
 
-    private func statRow(icon: String, value: String, label: String) -> some View {
+    private func statRow(icon: String, value: String, label: String, tint: Color = .blue) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
-                .background(.blue, in: Circle())
+                .background(tint, in: Circle())
 
             Text(value)
                 .font(.body.weight(.semibold).monospacedDigit())
@@ -316,6 +316,8 @@ struct MenuBarView: View {
 
     // MARK: - Claude Code
 
+    private static let claudeColor = Color(red: 0.76, green: 0.55, blue: 0.35)
+
     private var claudeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Claude Code")
@@ -326,13 +328,16 @@ struct MenuBarView: View {
             VStack(spacing: 2) {
                 statRow(icon: "terminal",
                         value: "\(claudeStore.activeSessions.count)",
-                        label: "Active sessions")
+                        label: "Active sessions",
+                        tint: Self.claudeColor)
                 statRow(icon: "hammer",
                         value: "\(claudeStore.totalToolCalls)",
-                        label: "Tool calls")
+                        label: "Tool calls",
+                        tint: Self.claudeColor)
                 statRow(icon: "clock",
                         value: AppStats.formatDuration(claudeStore.totalDuration),
-                        label: "Total duration")
+                        label: "Total duration",
+                        tint: Self.claudeColor)
             }
         }
         .padding(.horizontal, 16)

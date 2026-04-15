@@ -22,7 +22,7 @@
 
 ## Install
 
-1. Download `MacInputStats-x.x.x.dmg` from the [latest GitHub Release](https://github.com/SuveenE/mac-input-stats/releases/latest)
+1. Download `ActivityBar-x.x.x.dmg` from the [latest GitHub Release](https://github.com/SuveenE/mac-input-stats/releases/latest)
 2. Open the DMG and drag **Activity Bar** to Applications
 3. Launch **Activity Bar** and grant **Input Monitoring** when prompted
 

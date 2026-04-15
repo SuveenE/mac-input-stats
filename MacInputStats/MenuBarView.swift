@@ -482,11 +482,13 @@ struct MenuBarView: View {
     private var codingToolsChart: some View {
         let claudeDays = claudeStore.recentDays(count: chartRange.dayCount)
         let cursorDays = cursorStore.recentDays(count: chartRange.dayCount)
+        let codexDays = codexStore.recentDays(count: chartRange.dayCount)
 
-        // Merge Claude + Cursor data by date
-        var mergedByDate: [String: (claude: DailyClaudeStats?, cursor: DailyClaudeStats?)] = [:]
-        for day in claudeDays { mergedByDate[day.date, default: (nil, nil)].claude = day }
-        for day in cursorDays { mergedByDate[day.date, default: (nil, nil)].cursor = day }
+        // Merge Claude + Cursor + Codex data by date
+        var mergedByDate: [String: (claude: DailyClaudeStats?, cursor: DailyClaudeStats?, codex: DailyClaudeStats?)] = [:]
+        for day in claudeDays { mergedByDate[day.date, default: (nil, nil, nil)].claude = day }
+        for day in cursorDays { mergedByDate[day.date, default: (nil, nil, nil)].cursor = day }
+        for day in codexDays { mergedByDate[day.date, default: (nil, nil, nil)].codex = day }
 
         let allDates = mergedByDate.keys.sorted()
         let compactMode = chartRange.dayCount > 7
@@ -498,6 +500,7 @@ struct MenuBarView: View {
                 Spacer()
                 legendDot(color: Self.claudeColor, label: "Claude")
                 legendDot(color: .purple, label: "Cursor")
+                legendDot(color: Self.codexColor, label: "Codex")
             }
             .padding(.horizontal, 6)
 
@@ -508,6 +511,7 @@ struct MenuBarView: View {
                     let entry = mergedByDate[date]!
                     let claudeMins = (entry.claude?.executionDuration ?? 0) / 60
                     let cursorMins = (entry.cursor?.executionDuration ?? 0) / 60
+                    let codexMins = (entry.codex?.executionDuration ?? 0) / 60
 
                     LineMark(x: .value("Date", d), y: .value("Minutes", claudeMins), series: .value("Tool", "Claude"))
                         .foregroundStyle(by: .value("Tool", "Claude"))
@@ -515,6 +519,10 @@ struct MenuBarView: View {
 
                     LineMark(x: .value("Date", d), y: .value("Minutes", cursorMins), series: .value("Tool", "Cursor"))
                         .foregroundStyle(by: .value("Tool", "Cursor"))
+                        .interpolationMethod(.catmullRom)
+
+                    LineMark(x: .value("Date", d), y: .value("Minutes", codexMins), series: .value("Tool", "Codex"))
+                        .foregroundStyle(by: .value("Tool", "Codex"))
                         .interpolationMethod(.catmullRom)
 
                     if isHovered {
@@ -531,6 +539,8 @@ struct MenuBarView: View {
                                             .foregroundStyle(Self.claudeColor)
                                         Text(shortDuration(entry.cursor?.executionDuration ?? 0))
                                             .foregroundStyle(.purple)
+                                        Text(shortDuration(entry.codex?.executionDuration ?? 0))
+                                            .foregroundStyle(Self.codexColor)
                                     }
                                     .font(.system(size: 10).bold().monospacedDigit())
                                 }
@@ -546,6 +556,9 @@ struct MenuBarView: View {
                         PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
                             .foregroundStyle(.purple)
                             .symbolSize(30)
+                        PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
+                            .foregroundStyle(Self.codexColor)
+                            .symbolSize(30)
                     } else if !compactMode {
                         PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
                             .foregroundStyle(Self.claudeColor)
@@ -553,12 +566,16 @@ struct MenuBarView: View {
                         PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
                             .foregroundStyle(.purple)
                             .symbolSize(12)
+                        PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
+                            .foregroundStyle(Self.codexColor)
+                            .symbolSize(12)
                     }
                 }
             }
             .chartForegroundStyleScale([
                 "Claude": Self.claudeColor,
                 "Cursor": Color.purple,
+                "Codex": Self.codexColor,
             ])
             .chartLegend(.hidden)
             .chartYAxis {

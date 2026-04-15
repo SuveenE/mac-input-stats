@@ -654,7 +654,7 @@ struct MenuBarView: View {
                 } label: {
                     Text(range.label)
                         .font(.caption.weight(.medium))
-                        .padding(.horizontal, 10)
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 4)
                         .foregroundStyle(chartRange == range ? .white : .primary.opacity(0.55))
                         .background(

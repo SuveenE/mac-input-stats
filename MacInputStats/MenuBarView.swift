@@ -110,17 +110,26 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
             headerBar
             todayStats
-            if claudeStore.totalDuration > 0 || claudeStore.totalWords > 0 || !claudeStore.activeSessions.isEmpty {
+            if claudeStore.totalDuration > 0 || cursorStore.totalDuration > 0 || codexStore.totalDuration > 0
+                || !claudeStore.activeSessions.isEmpty || !cursorStore.activeSessions.isEmpty || !codexStore.activeSessions.isEmpty {
                 Divider().padding(.horizontal, 12)
-                claudeSection
-            }
-            if cursorStore.totalDuration > 0 || cursorStore.totalWords > 0 || !cursorStore.activeSessions.isEmpty {
-                Divider().padding(.horizontal, 12)
-                cursorSection
-            }
-            if codexStore.totalDuration > 0 || codexStore.totalWords > 0 || !codexStore.activeSessions.isEmpty {
-                Divider().padding(.horizontal, 12)
-                codexSection
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Coding Tool Execution Time")
+                        .font(.headline)
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 2)
+
+                    if claudeStore.totalDuration > 0 || !claudeStore.activeSessions.isEmpty {
+                        claudeSection
+                    }
+                    if cursorStore.totalDuration > 0 || !cursorStore.activeSessions.isEmpty {
+                        cursorSection
+                    }
+                    if codexStore.totalDuration > 0 || !codexStore.activeSessions.isEmpty {
+                        codexSection
+                    }
+                }
+                .padding(.vertical, 8)
             }
             Divider().padding(.horizontal, 12)
             topAppsSection
@@ -361,98 +370,39 @@ struct MenuBarView: View {
     private static let codexColor = Color(red: 0x10 / 255.0, green: 0xA3 / 255.0, blue: 0x7F / 255.0)
 
     private var claudeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Claude Code")
-                .font(.headline)
-                .padding(.horizontal, 6)
-                .padding(.bottom, 2)
-
-            HStack(spacing: 10) {
-                tintedStatCell(icon: "clock",
-                               value: AppStats.formatDuration(claudeStore.totalDuration),
-                               label: "Execution duration",
-                               tint: Self.claudeColor)
-                tintedStatCell(icon: "text.bubble",
-                               value: formatWordCount(claudeStore.totalWords),
-                               label: "Words to Claude",
-                               tint: Self.claudeColor)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        codingToolRow(name: "Claude Code", duration: claudeStore.totalDuration, tint: Self.claudeColor)
     }
 
     private var cursorSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Cursor")
-                .font(.headline)
-                .padding(.horizontal, 6)
-                .padding(.bottom, 2)
-
-            HStack(spacing: 10) {
-                tintedStatCell(icon: "clock",
-                               value: AppStats.formatDuration(cursorStore.totalDuration),
-                               label: "Execution duration",
-                               tint: Self.cursorColor)
-                tintedStatCell(icon: "text.bubble",
-                               value: formatWordCount(cursorStore.totalWords),
-                               label: "Words to Cursor",
-                               tint: Self.cursorColor)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        codingToolRow(name: "Cursor", duration: cursorStore.totalDuration, tint: Self.cursorColor)
     }
 
     private var codexSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Codex")
-                .font(.headline)
-                .padding(.horizontal, 6)
-                .padding(.bottom, 2)
-
-            HStack(spacing: 10) {
-                tintedStatCell(icon: "clock",
-                               value: AppStats.formatDuration(codexStore.totalDuration),
-                               label: "Execution duration",
-                               tint: Self.codexColor)
-                tintedStatCell(icon: "text.bubble",
-                               value: formatWordCount(codexStore.totalWords),
-                               label: "Words to Codex",
-                               tint: Self.codexColor)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        codingToolRow(name: "Codex", duration: codexStore.totalDuration, tint: Self.codexColor)
     }
 
-    private func tintedStatCell(icon: String, value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 26, height: 26)
-                    .background(tint, in: Circle())
+    private func codingToolRow(name: String, duration: TimeInterval, tint: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "clock")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(tint, in: Circle())
 
-                Text(value)
-                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundStyle(.primary.opacity(0.5))
+            Text(name)
+                .font(.body)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer()
+
+            Text(AppStats.formatDuration(duration))
+                .font(.body.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.primary.opacity(0.55))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, 16)
     }
 
     private func claudeProjectRow(name: String, stats: ClaudeProjectStats, maxDuration: TimeInterval) -> some View {

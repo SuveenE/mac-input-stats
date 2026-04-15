@@ -44,14 +44,18 @@ final class ClaudeSessionStore: ObservableObject {
         sessions.values.reduce(0) { $0 + $1.toolCallCount }
     }
 
+    private var todayKey: String {
+        StatsStore.dateKey(for: Date())
+    }
+
     /// Total words spoken to Claude today (persisted).
     var totalWords: Int {
-        days[currentDateKey]?.wordCount ?? 0
+        days[todayKey]?.wordCount ?? 0
     }
 
     /// Total non-idle duration today: persisted + any in-progress active time.
     var totalDuration: TimeInterval {
-        let persisted = days[currentDateKey]?.executionDuration ?? 0
+        let persisted = days[todayKey]?.executionDuration ?? 0
         let now = Date()
         let inProgress = sessions.values.reduce(0.0) { total, session in
             guard let activeStart = session.activeStartedAt else { return total }
@@ -62,7 +66,7 @@ final class ClaudeSessionStore: ObservableObject {
 
     /// Top projects for today, sorted by execution duration.
     var todayTopProjects: [(name: String, stats: ClaudeProjectStats)] {
-        days[currentDateKey]?.topProjects ?? []
+        days[todayKey]?.topProjects ?? []
     }
 
     func recentDays(count: Int) -> [DailyClaudeStats] {

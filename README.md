@@ -7,8 +7,8 @@
     and <b>coding tool activity</b>. See how much time <i>Claude Code</i> and <i>Cursor</i> spend working for you.
     <br />
     <br />
-    <a href="https://github.com/SuveenE/mac-input-stats/releases/latest">
-      <img src="https://img.shields.io/github/v/release/SuveenE/mac-input-stats?style=rounded&color=orange&labelColor=000000&label=release" alt="Release Version" />
+    <a href="https://github.com/SuveenE/activity-bar/releases/latest">
+      <img src="https://img.shields.io/github/v/release/SuveenE/activity-bar?style=rounded&color=orange&labelColor=000000&label=release" alt="Release Version" />
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-green?labelColor=000000" alt="MIT License" />
@@ -22,7 +22,7 @@
 
 ## Install
 
-1. Download `ActivityBar.dmg` from the [latest GitHub Release](https://github.com/SuveenE/mac-input-stats/releases/latest)
+1. Download `ActivityBar.dmg` from the [latest GitHub Release](https://github.com/SuveenE/activity-bar/releases/latest)
 2. Open the DMG and drag **Activity Bar** to Applications
 3. Launch **Activity Bar** and grant **Input Monitoring** when prompted
 

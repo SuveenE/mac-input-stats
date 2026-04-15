@@ -131,7 +131,7 @@ jobs:
                 <pubDate>${PUB_DATE}</pubDate>
                 <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
                 <enclosure
-                  url="https://github.com/SuveenE/mac-input-stats/releases/download/${TAG_NAME}/ActivityBar.dmg"
+                  url="https://github.com/SuveenE/activity-bar/releases/download/${TAG_NAME}/ActivityBar.dmg"
                   length="${DMG_LENGTH}"
                   type="application/octet-stream"
                   sparkle:edSignature="${ED_SIGNATURE}"

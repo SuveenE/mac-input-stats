@@ -114,7 +114,7 @@ struct MenuBarView: View {
                 || !claudeStore.activeSessions.isEmpty || !cursorStore.activeSessions.isEmpty || !codexStore.activeSessions.isEmpty {
                 Divider().padding(.horizontal, 12)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Coding Tool Execution Time")
+                    Text("Time AI Worked for You")
                         .font(.headline)
                         .padding(.horizontal, 22)
                         .padding(.bottom, 2)

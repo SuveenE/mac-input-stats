@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="MacInputStats/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="Mac Input Stats" width="100" height="100">
-  <h3 align="center">Mac Input Stats</h3>
+  <img src="MacInputStats/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="Activity Bar" width="100" height="100">
+  <h3 align="center">Activity Bar</h3>
   <p align="center">
     A macOS menu bar app that tracks your <b>keystrokes</b>, <b>clicks</b>, <b>scrolling</b>, <b>voice input</b>,
     <br />
@@ -23,8 +23,8 @@
 ## Install
 
 1. Download `MacInputStats-x.x.x.dmg` from the [latest GitHub Release](https://github.com/SuveenE/mac-input-stats/releases/latest)
-2. Open the DMG and drag **Mac Input Stats** to Applications
-3. Launch **Mac Input Stats** and grant **Input Monitoring** when prompted
+2. Open the DMG and drag **Activity Bar** to Applications
+3. Launch **Activity Bar** and grant **Input Monitoring** when prompted
 
    <img src="assets/Input-monitoring-permissions.png" alt="Input Monitoring permission" width="480">
 

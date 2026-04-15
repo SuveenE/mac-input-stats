@@ -25,7 +25,7 @@ struct DashboardView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("Mac Input Stats")
+                Text("Activity Bar")
                     .font(.largeTitle.bold())
                 Text(store.currentDateKey)
                     .font(.subheadline)

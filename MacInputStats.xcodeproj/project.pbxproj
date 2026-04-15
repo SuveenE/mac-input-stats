@@ -221,9 +221,9 @@
 				CURRENT_PROJECT_VERSION = 17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MacInputStats/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Mac Input Stats Dev";
+				INFOPLIST_KEY_CFBundleDisplayName = "Activity Bar Dev";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MacInputStats uses the microphone to detect when you are speaking and estimate talk time.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Activity Bar uses the microphone to detect when you are speaking and estimate talk time.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -247,8 +247,9 @@
 				CURRENT_PROJECT_VERSION = 17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MacInputStats/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Activity Bar";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MacInputStats uses the microphone to detect when you are speaking and estimate talk time.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Activity Bar uses the microphone to detect when you are speaking and estimate talk time.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

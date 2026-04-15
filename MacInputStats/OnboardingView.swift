@@ -8,7 +8,7 @@ struct OnboardingView: View {
                 Image(systemName: "keyboard.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(.blue)
-                Text("Welcome to Input Stats")
+                Text("Welcome to Activity Bar")
                     .font(.title2.bold())
                 Text("Grant Input Monitoring so the app can track keystrokes, clicks, and scrolls across all apps.")
                     .font(.body)

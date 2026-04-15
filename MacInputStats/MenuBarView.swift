@@ -163,7 +163,7 @@ struct MenuBarView: View {
 
     private var headerBar: some View {
         HStack {
-            Text("Input Stats")
+            Text("Activity Bar")
                 .font(.title3.bold())
             #if DEBUG
             Text("DEV")
@@ -1012,7 +1012,7 @@ struct MenuBarView: View {
 
     private func showQuitAlert() {
         let alert = NSAlert()
-        alert.messageText = "Quit Mac Input Stats?"
+        alert.messageText = "Quit Activity Bar?"
         alert.informativeText = "Tracking will stop until you reopen the app."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Quit")

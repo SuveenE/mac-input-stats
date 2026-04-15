@@ -4,7 +4,7 @@
   <p align="center">
     A macOS menu bar app that helps you understand how you use your Mac
     <br />
-    through <b>typing</b>, <b>clicks</b>, <b>scrolling</b>, <b>voice input</b>, and <picture><img src="assets/claude-code-stats-badge.svg" alt="Claude Code stats" height="18" align="center" /></picture>.
+    through <b>typing</b>, <b>clicks</b>, <b>scrolling</b>, <b>voice input</b>, and <b>coding tool stats</b>.
     <br />
     <br />
     <a href="https://github.com/SuveenE/mac-input-stats/releases/latest">
@@ -16,7 +16,8 @@
     <img src="https://img.shields.io/badge/macOS-14.0%2B-f7a41d?labelColor=000000" alt="macOS 14.0+" />
   </p>
   <br />
-  <img src="assets/menubar-widget.png" alt="Menu bar widget" width="600">
+  <img src="assets/menubar-widget.png" alt="Menu bar widget" width="400">
+  <img src="assets/cursor-stats.png" alt="Cursor stats" width="400">
 </div>
 
 ## Install
@@ -32,7 +33,7 @@
 - **Menu bar widget** with a floating panel for quick-glance daily stats
 - **Per-app breakdown** of keystrokes, clicks, scrolls, screen time, and talk time
 - **Talk time detection** using CoreAudio microphone activity monitoring
-- **Claude Code stats** tracking execution duration and words sent via hooks
+- **Coding tool stats** tracking execution duration and words sent via hooks (Claude Code, Cursor)
 - **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
 - **Daily persistence** with a rolling 7-day history
 

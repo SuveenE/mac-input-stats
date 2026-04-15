@@ -27,9 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         userDriverDelegate: nil
     )
 
-    // Claude Code & Cursor activity tracking
+    // Claude Code, Cursor & Codex activity tracking
     let claudeStore = ClaudeSessionStore()
     let cursorStore = CursorSessionStore()
+    let codexStore = CodexSessionStore()
     private var claudeServer: ClaudeSocketServer?
 
     private var statusItem: NSStatusItem!
@@ -62,6 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         claudeServer = ClaudeSocketServer { [weak self] event in
             if event.sessionId.hasPrefix("cursor-") {
                 self?.cursorStore.handleEvent(event)
+            } else if event.sessionId.hasPrefix("codex-") {
+                self?.codexStore.handleEvent(event)
             } else {
                 self?.claudeStore.handleEvent(event)
             }
@@ -134,6 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             micMonitor: micMonitor,
             claudeStore: claudeStore,
             cursorStore: cursorStore,
+            codexStore: codexStore,
             updater: updaterController.updater,
             onClose: { [weak self] in self?.closePanel() },
             onOpenSettings: {

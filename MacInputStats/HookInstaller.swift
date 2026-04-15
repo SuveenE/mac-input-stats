@@ -1,9 +1,10 @@
 import Foundation
 
-/// Installs hook scripts and registers them in settings for Claude Code and Cursor.
+/// Installs hook scripts and registers them in settings for Claude Code, Cursor, and Codex.
 enum HookInstaller {
     private static let claudeHookFileName = "claude-activity-hook.sh"
     private static let cursorHookFileName = "cursor-activity-hook.sh"
+    private static let codexHookFileName = "codex-activity-hook.sh"
 
     private static var claudeHooksDir: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -18,6 +19,21 @@ enum HookInstaller {
     private static var cursorHooksPath: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".cursor/hooks.json")
+    }
+
+    private static var codexHooksDir: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex")
+    }
+
+    private static var codexConfigPath: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex/config.toml")
+    }
+
+    private static var codexHooksPath: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex/hooks.json")
     }
 
     // MARK: - Claude Code Hook Script
@@ -193,6 +209,80 @@ enum HookInstaller {
     "
     """
 
+    // MARK: - Codex Hook Script
+
+    private static let codexHookScript = """
+    #!/bin/bash
+    # Codex activity hook - forwards events via Unix socket to notchi
+    # Codex events match ClaudeEventType names so no mapping needed
+
+    SOCKET_PATH="/tmp/notchi.sock"
+
+    # Exit silently if socket doesn't exist (app not running)
+    [ -S "$SOCKET_PATH" ] || exit 0
+
+    # Parse input and send to socket using Python
+    /usr/bin/python3 -c "
+    import json
+    import os
+    import socket
+    import sys
+
+    try:
+        input_data = json.load(sys.stdin)
+    except:
+        sys.exit(0)
+
+    hook_event = input_data.get('hook_event_name', '')
+    session_id = input_data.get('session_id', '')
+
+    # Prefix session ID so the app can route to CodexSessionStore
+    if session_id and not session_id.startswith('codex-'):
+        session_id = 'codex-' + session_id
+
+    status_map = {
+        'UserPromptSubmit': 'processing',
+        'SessionStart': 'waiting_for_input',
+        'SessionEnd': 'ended',
+        'PreToolUse': 'running_tool',
+        'PostToolUse': 'processing',
+        'Stop': 'waiting_for_input'
+    }
+
+    output = {
+        'session_id': session_id,
+        'transcript_path': input_data.get('transcript_path', ''),
+        'cwd': input_data.get('cwd', ''),
+        'event': hook_event,
+        'status': status_map.get(hook_event, 'unknown'),
+        'pid': None,
+        'tty': None,
+        'interactive': True
+    }
+
+    if hook_event == 'UserPromptSubmit':
+        prompt = input_data.get('prompt', '')
+        if prompt:
+            output['user_prompt'] = prompt
+
+    tool = input_data.get('tool_name', '')
+    if tool:
+        output['tool'] = tool
+
+    tool_input = input_data.get('tool_input', {})
+    if tool_input:
+        output['tool_input'] = tool_input
+
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect('$SOCKET_PATH')
+        sock.sendall(json.dumps(output).encode())
+        sock.close()
+    except:
+        pass
+    "
+    """
+
     // MARK: - Hook Events
 
     private static let claudeHookEvents = [
@@ -204,6 +294,11 @@ enum HookInstaller {
     private static let cursorHookEvents = [
         "beforeSubmitPrompt", "stop", "afterFileEdit",
         "beforeReadFile", "beforeShellExecution", "beforeMCPExecution",
+    ]
+
+    private static let codexHookEvents = [
+        "PreToolUse", "PostToolUse", "UserPromptSubmit",
+        "Stop", "SessionStart", "SessionEnd",
     ]
 
     // MARK: - Public API
@@ -221,6 +316,14 @@ enum HookInstaller {
             try registerCursorHooks()
         } catch {
             print("[HookInstaller] Cursor hook installation failed: \(error)")
+        }
+
+        do {
+            try installScript(fileName: codexHookFileName, content: codexHookScript, dir: claudeHooksDir)
+            try enableCodexHooksFeature()
+            try registerCodexHooks()
+        } catch {
+            print("[HookInstaller] Codex hook installation failed: \(error)")
         }
     }
 
@@ -344,5 +447,90 @@ enum HookInstaller {
 
         let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: cursorHooksPath, options: .atomic)
+    }
+
+    // MARK: - Codex Feature Flag
+
+    private static func enableCodexHooksFeature() throws {
+        let fm = FileManager.default
+
+        // Ensure ~/.codex/ directory exists
+        if !fm.fileExists(atPath: codexHooksDir.path) {
+            try fm.createDirectory(at: codexHooksDir, withIntermediateDirectories: true)
+        }
+
+        // Read or create config.toml, ensure codex_hooks = true
+        var config = ""
+        if fm.fileExists(atPath: codexConfigPath.path) {
+            config = (try? String(contentsOf: codexConfigPath, encoding: .utf8)) ?? ""
+        }
+
+        if config.contains("codex_hooks") {
+            // Already has the key — make sure it's true
+            if config.contains("codex_hooks = false") {
+                config = config.replacingOccurrences(of: "codex_hooks = false", with: "codex_hooks = true")
+                try config.write(to: codexConfigPath, atomically: true, encoding: .utf8)
+            }
+        } else {
+            // Append the feature flag
+            if config.contains("[features]") {
+                config = config.replacingOccurrences(of: "[features]", with: "[features]\ncodex_hooks = true")
+            } else {
+                config += "\n[features]\ncodex_hooks = true\n"
+            }
+            try config.write(to: codexConfigPath, atomically: true, encoding: .utf8)
+        }
+    }
+
+    // MARK: - Codex Hook Registration
+
+    private static func registerCodexHooks() throws {
+        let fm = FileManager.default
+        let scriptPath = claudeHooksDir.appendingPathComponent(codexHookFileName).path
+
+        var root: [String: Any]
+        if fm.fileExists(atPath: codexHooksPath.path),
+           let data = try? Data(contentsOf: codexHooksPath),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        {
+            root = parsed
+        } else {
+            root = [:]
+        }
+
+        var hooks = root["hooks"] as? [String: Any] ?? [:]
+        var needsWrite = false
+
+        for eventName in codexHookEvents {
+            var matcherGroups = hooks[eventName] as? [[String: Any]] ?? []
+
+            let alreadyRegistered = matcherGroups.contains { group in
+                guard let groupHooks = group["hooks"] as? [[String: Any]] else { return false }
+                return groupHooks.contains { hook in
+                    (hook["command"] as? String)?.contains(codexHookFileName) == true
+                }
+            }
+
+            if !alreadyRegistered {
+                let matcherGroup: [String: Any] = [
+                    "matcher": "",
+                    "hooks": [[
+                        "type": "command",
+                        "command": scriptPath,
+                        "timeout": 5000,
+                    ]],
+                ]
+                matcherGroups.append(matcherGroup)
+                hooks[eventName] = matcherGroups
+                needsWrite = true
+            }
+        }
+
+        guard needsWrite else { return }
+
+        root["hooks"] = hooks
+
+        let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: codexHooksPath, options: .atomic)
     }
 }

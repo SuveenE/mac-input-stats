@@ -88,6 +88,7 @@ struct MenuBarView: View {
     @ObservedObject var micMonitor: SpeechDetector
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
+    @ObservedObject var codexStore: CodexSessionStore
     var updater: SPUUpdater
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
@@ -116,6 +117,10 @@ struct MenuBarView: View {
             if cursorStore.totalDuration > 0 || cursorStore.totalWords > 0 || !cursorStore.activeSessions.isEmpty {
                 Divider().padding(.horizontal, 12)
                 cursorSection
+            }
+            if codexStore.totalDuration > 0 || codexStore.totalWords > 0 || !codexStore.activeSessions.isEmpty {
+                Divider().padding(.horizontal, 12)
+                codexSection
             }
             Divider().padding(.horizontal, 12)
             topAppsSection
@@ -354,6 +359,7 @@ struct MenuBarView: View {
 
     private static let claudeColor = Color(red: 0xCB / 255.0, green: 0x64 / 255.0, blue: 0x41 / 255.0)
     private static let cursorColor = Color.black
+    private static let codexColor = Color(red: 0x10 / 255.0, green: 0xA3 / 255.0, blue: 0x7F / 255.0)
 
     private var claudeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -394,6 +400,29 @@ struct MenuBarView: View {
                                value: formatWordCount(cursorStore.totalWords),
                                label: "Words to Cursor",
                                tint: Self.cursorColor)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private var codexSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Codex")
+                .font(.headline)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 2)
+
+            HStack(spacing: 10) {
+                tintedStatCell(icon: "clock",
+                               value: AppStats.formatDuration(codexStore.totalDuration),
+                               label: "Execution duration",
+                               tint: Self.codexColor)
+                tintedStatCell(icon: "text.bubble",
+                               value: formatWordCount(codexStore.totalWords),
+                               label: "Words to Codex",
+                               tint: Self.codexColor)
             }
             .fixedSize(horizontal: false, vertical: true)
         }

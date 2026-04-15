@@ -12,6 +12,11 @@ private struct PanelShape: Shape {
 
 // MARK: - Chart Range
 
+enum TrendMode: String, CaseIterable {
+    case codingTools = "Coding Tools"
+    case input = "Input"
+}
+
 enum ChartRange: String, CaseIterable {
     case oneDay = "1d"
     case sevenDays = "7d"
@@ -91,6 +96,7 @@ struct MenuBarView: View {
     @State private var expandedApp: String?
     @AppStorage("statsExpanded") private var statsExpanded = false
     @AppStorage("chartRange") private var chartRange: ChartRange = .sevenDays
+    @State private var trendMode: TrendMode = .codingTools
 
     private let panelWidth: CGFloat = 340
 
@@ -116,9 +122,14 @@ struct MenuBarView: View {
             Divider().padding(.horizontal, 12)
             statsDisclosure
             if statsExpanded {
-                weeklyChart
-                Divider().padding(.horizontal, 12)
-                talkTimeSection
+                trendModePicker
+                if trendMode == .codingTools {
+                    codingToolsChart
+                } else {
+                    weeklyChart
+                    Divider().padding(.horizontal, 12)
+                    talkTimeSection
+                }
             }
             Divider().padding(.horizontal, 12)
             footerBar
@@ -132,6 +143,7 @@ struct MenuBarView: View {
         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
         .animation(.easeInOut(duration: 0.2), value: statsExpanded)
         .animation(.easeInOut(duration: 0.2), value: chartRange)
+        .animation(.easeInOut(duration: 0.2), value: trendMode)
     }
 
     // MARK: - Header
@@ -465,6 +477,183 @@ struct MenuBarView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Trend Mode Picker
+
+    private var trendModePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(TrendMode.allCases, id: \.self) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        trendMode = mode
+                        hoveredDate = nil
+                    }
+                } label: {
+                    Text(mode.rawValue)
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .foregroundStyle(trendMode == mode ? .white : .primary.opacity(0.55))
+                        .background(
+                            trendMode == mode
+                                ? Color.blue
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+    }
+
+    // MARK: - Coding Tools Chart
+
+    private var codingToolsChart: some View {
+        let claudeDays = claudeStore.recentDays(count: chartRange.dayCount)
+        let cursorDays = cursorStore.recentDays(count: chartRange.dayCount)
+
+        // Merge Claude + Cursor data by date
+        var mergedByDate: [String: (claude: DailyClaudeStats?, cursor: DailyClaudeStats?)] = [:]
+        for day in claudeDays { mergedByDate[day.date, default: (nil, nil)].claude = day }
+        for day in cursorDays { mergedByDate[day.date, default: (nil, nil)].cursor = day }
+
+        let allDates = mergedByDate.keys.sorted()
+        let compactMode = chartRange.dayCount > 7
+        let dateLabels = allDates.map { chartLabel($0) }
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                rangePickerBar
+                Spacer()
+                legendDot(color: Self.claudeColor, label: "Claude")
+                legendDot(color: .purple, label: "Cursor")
+            }
+            .padding(.horizontal, 6)
+
+            Chart {
+                ForEach(allDates, id: \.self) { date in
+                    let d = chartLabel(date)
+                    let isHovered = hoveredDate == d
+                    let entry = mergedByDate[date]!
+                    let claudeMins = (entry.claude?.executionDuration ?? 0) / 60
+                    let cursorMins = (entry.cursor?.executionDuration ?? 0) / 60
+
+                    LineMark(x: .value("Date", d), y: .value("Minutes", claudeMins), series: .value("Tool", "Claude"))
+                        .foregroundStyle(by: .value("Tool", "Claude"))
+                        .interpolationMethod(.catmullRom)
+
+                    LineMark(x: .value("Date", d), y: .value("Minutes", cursorMins), series: .value("Tool", "Cursor"))
+                        .foregroundStyle(by: .value("Tool", "Cursor"))
+                        .interpolationMethod(.catmullRom)
+
+                    if isHovered {
+                        RuleMark(x: .value("Date", d))
+                            .foregroundStyle(.gray.opacity(0.3))
+                            .lineStyle(StrokeStyle(dash: [4, 4]))
+                            .annotation(position: .top, spacing: 0, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
+                                VStack(spacing: 2) {
+                                    Text(shortDate(date))
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(.primary.opacity(0.55))
+                                    HStack(spacing: 6) {
+                                        Text(shortDuration(entry.claude?.executionDuration ?? 0))
+                                            .foregroundStyle(Self.claudeColor)
+                                        Text(shortDuration(entry.cursor?.executionDuration ?? 0))
+                                            .foregroundStyle(.purple)
+                                    }
+                                    .font(.system(size: 10).bold().monospacedDigit())
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+                                .offset(y: 30)
+                            }
+
+                        PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
+                            .foregroundStyle(Self.claudeColor)
+                            .symbolSize(30)
+                        PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
+                            .foregroundStyle(.purple)
+                            .symbolSize(30)
+                    } else if !compactMode {
+                        PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
+                            .foregroundStyle(Self.claudeColor)
+                            .symbolSize(12)
+                        PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
+                            .foregroundStyle(.purple)
+                            .symbolSize(12)
+                    }
+                }
+            }
+            .chartForegroundStyleScale([
+                "Claude": Self.claudeColor,
+                "Cursor": Color.purple,
+            ])
+            .chartLegend(.hidden)
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let mins = value.as(Double.self) {
+                            Text(talkAxisLabel(mins))
+                                .font(.system(size: 9))
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { value in
+                    AxisGridLine()
+                    if compactMode {
+                        AxisValueLabel() {
+                            if let label = value.as(String.self) {
+                                if shouldShowXLabel(label, in: dateLabels) {
+                                    Text(label)
+                                        .font(.system(size: 9))
+                                }
+                            }
+                        }
+                    } else {
+                        AxisValueLabel()
+                            .font(.system(size: 9))
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case .active(let location):
+                                let plotFrame = geo[proxy.plotFrame!]
+                                let x = location.x - plotFrame.origin.x
+                                var closest: String?
+                                var closestDist: CGFloat = .infinity
+                                for label in dateLabels {
+                                    if let pos = proxy.position(forX: label) {
+                                        let dist = abs(pos - x)
+                                        if dist < closestDist {
+                                            closestDist = dist
+                                            closest = label
+                                        }
+                                    }
+                                }
+                                hoveredDate = closest
+                            case .ended:
+                                hoveredDate = nil
+                            }
+                        }
+                }
+            }
+            .frame(height: 120)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Range Chart

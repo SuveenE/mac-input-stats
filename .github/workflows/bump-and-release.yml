@@ -56,7 +56,7 @@ jobs:
 
       - name: Codesign app
         run: |
-          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/Activity Bar.app"
           codesign --deep --force --options runtime --timestamp \
             --sign "Developer ID Application: Suveen Ellawela (Z98F8W9LD3)" "$APP_PATH"
 
@@ -66,9 +66,9 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
-          ditto -c -k --keepParent "$APP_PATH" $RUNNER_TEMP/MacInputStats-notarize.zip
-          xcrun notarytool submit $RUNNER_TEMP/MacInputStats-notarize.zip \
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/Activity Bar.app"
+          ditto -c -k --keepParent "$APP_PATH" $RUNNER_TEMP/ActivityBar-notarize.zip
+          xcrun notarytool submit $RUNNER_TEMP/ActivityBar-notarize.zip \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
@@ -78,17 +78,17 @@ jobs:
       - name: Create DMG
         run: |
           brew install create-dmg
-          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/MacInputStats.app"
+          APP_PATH="$RUNNER_TEMP/MacInputStats.xcarchive/Products/Applications/Activity Bar.app"
           mkdir -p $RUNNER_TEMP/dmg-source
           cp -R "$APP_PATH" $RUNNER_TEMP/dmg-source/
           create-dmg \
-            --volname "Mac Input Stats" \
+            --volname "Activity Bar" \
             --window-pos 200 120 \
             --window-size 600 400 \
             --icon-size 100 \
-            --icon "MacInputStats.app" 150 185 \
+            --icon "Activity Bar.app" 150 185 \
             --app-drop-link 450 185 \
-            MacInputStats.dmg \
+            ActivityBar.dmg \
             $RUNNER_TEMP/dmg-source/
 
       - name: Sign and notarize DMG
@@ -98,20 +98,20 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           codesign --force --timestamp \
-            --sign "Developer ID Application: Suveen Ellawela (Z98F8W9LD3)" MacInputStats.dmg
-          xcrun notarytool submit MacInputStats.dmg \
+            --sign "Developer ID Application: Suveen Ellawela (Z98F8W9LD3)" ActivityBar.dmg
+          xcrun notarytool submit ActivityBar.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --wait --timeout 20m
-          xcrun stapler staple MacInputStats.dmg
+          xcrun stapler staple ActivityBar.dmg
 
       - name: Sparkle sign
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           SIGN_TOOL=$(find build/SourcePackages/artifacts -name "sign_update" -type f | head -1)
-          SIGNATURE=$("$SIGN_TOOL" MacInputStats.dmg --ed-key-file <(echo -n "$SPARKLE_PRIVATE_KEY") 2>&1)
+          SIGNATURE=$("$SIGN_TOOL" ActivityBar.dmg --ed-key-file <(echo -n "$SPARKLE_PRIVATE_KEY") 2>&1)
           ED_SIG=$(echo "$SIGNATURE" | grep -o 'sparkle:edSignature="[^"]*"' | sed 's/sparkle:edSignature="//;s/"//')
           LENGTH=$(echo "$SIGNATURE" | grep -o 'length="[^"]*"' | sed 's/length="//;s/"//')
           echo "ED_SIGNATURE=$ED_SIG" >> $GITHUB_ENV
@@ -125,7 +125,7 @@ jobs:
           <?xml version="1.0" standalone="yes"?>
           <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
             <channel>
-              <title>Mac Input Stats</title>
+              <title>Activity Bar</title>
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${APP_BUILD}</sparkle:version>
@@ -133,7 +133,7 @@ jobs:
                 <pubDate>${PUB_DATE}</pubDate>
                 <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
                 <enclosure
-                  url="https://github.com/SuveenE/mac-input-stats/releases/download/v${VERSION}/MacInputStats.dmg"
+                  url="https://github.com/SuveenE/mac-input-stats/releases/download/v${VERSION}/ActivityBar.dmg"
                   length="${DMG_LENGTH}"
                   type="application/octet-stream"
                   sparkle:edSignature="${ED_SIGNATURE}"
@@ -158,5 +158,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}
-          files: MacInputStats.dmg
+          files: ActivityBar.dmg
           generate_release_notes: true

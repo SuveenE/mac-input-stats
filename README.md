@@ -2,9 +2,9 @@
   <img src="MacInputStats/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="Activity Bar" width="100" height="100">
   <h3 align="center">Activity Bar</h3>
   <p align="center">
-    A macOS menu bar app that tracks your <b>keystrokes</b>, <b>clicks</b>, <b>scrolling</b>, <b>voice input</b>,
+    A macOS menu bar app that tracks how AI coding tools work for you
     <br />
-    and <b>coding tool activity</b>. See how much time <i>Claude Code</i> and <i>Cursor</i> spend working for you.
+    and how you work — <b>keystrokes</b>, <b>clicks</b>, <b>scrolling</b>, and <b>voice input</b>.
     <br />
     <br />
     <a href="https://github.com/SuveenE/activity-bar/releases/latest">

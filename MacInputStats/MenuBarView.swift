@@ -494,13 +494,17 @@ struct MenuBarView: View {
         let compactMode = chartRange.dayCount > 7
         let dateLabels = allDates.map { chartLabel($0) }
 
+        let hasClaude = mergedByDate.values.contains { ($0.claude?.executionDuration ?? 0) > 0 }
+        let hasCursor = mergedByDate.values.contains { ($0.cursor?.executionDuration ?? 0) > 0 }
+        let hasCodex = mergedByDate.values.contains { ($0.codex?.executionDuration ?? 0) > 0 }
+
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 rangePickerBar
                 Spacer()
-                legendDot(color: Self.claudeColor, label: "Claude")
-                legendDot(color: .purple, label: "Cursor")
-                legendDot(color: Self.codexColor, label: "Codex")
+                if hasClaude { legendDot(color: Self.claudeColor, label: "Claude") }
+                if hasCursor { legendDot(color: .purple, label: "Cursor") }
+                if hasCodex { legendDot(color: Self.codexColor, label: "Codex") }
             }
             .padding(.horizontal, 6)
 
@@ -513,17 +517,23 @@ struct MenuBarView: View {
                     let cursorMins = (entry.cursor?.executionDuration ?? 0) / 60
                     let codexMins = (entry.codex?.executionDuration ?? 0) / 60
 
-                    LineMark(x: .value("Date", d), y: .value("Minutes", claudeMins), series: .value("Tool", "Claude"))
-                        .foregroundStyle(by: .value("Tool", "Claude"))
-                        .interpolationMethod(.catmullRom)
+                    if hasClaude {
+                        LineMark(x: .value("Date", d), y: .value("Minutes", claudeMins), series: .value("Tool", "Claude"))
+                            .foregroundStyle(by: .value("Tool", "Claude"))
+                            .interpolationMethod(.catmullRom)
+                    }
 
-                    LineMark(x: .value("Date", d), y: .value("Minutes", cursorMins), series: .value("Tool", "Cursor"))
-                        .foregroundStyle(by: .value("Tool", "Cursor"))
-                        .interpolationMethod(.catmullRom)
+                    if hasCursor {
+                        LineMark(x: .value("Date", d), y: .value("Minutes", cursorMins), series: .value("Tool", "Cursor"))
+                            .foregroundStyle(by: .value("Tool", "Cursor"))
+                            .interpolationMethod(.catmullRom)
+                    }
 
-                    LineMark(x: .value("Date", d), y: .value("Minutes", codexMins), series: .value("Tool", "Codex"))
-                        .foregroundStyle(by: .value("Tool", "Codex"))
-                        .interpolationMethod(.catmullRom)
+                    if hasCodex {
+                        LineMark(x: .value("Date", d), y: .value("Minutes", codexMins), series: .value("Tool", "Codex"))
+                            .foregroundStyle(by: .value("Tool", "Codex"))
+                            .interpolationMethod(.catmullRom)
+                    }
 
                     if isHovered {
                         RuleMark(x: .value("Date", d))
@@ -535,12 +545,18 @@ struct MenuBarView: View {
                                         .font(.system(size: 9))
                                         .foregroundStyle(.primary.opacity(0.55))
                                     HStack(spacing: 6) {
-                                        Text(shortDuration(entry.claude?.executionDuration ?? 0))
-                                            .foregroundStyle(Self.claudeColor)
-                                        Text(shortDuration(entry.cursor?.executionDuration ?? 0))
-                                            .foregroundStyle(.purple)
-                                        Text(shortDuration(entry.codex?.executionDuration ?? 0))
-                                            .foregroundStyle(Self.codexColor)
+                                        if hasClaude {
+                                            Text(shortDuration(entry.claude?.executionDuration ?? 0))
+                                                .foregroundStyle(Self.claudeColor)
+                                        }
+                                        if hasCursor {
+                                            Text(shortDuration(entry.cursor?.executionDuration ?? 0))
+                                                .foregroundStyle(.purple)
+                                        }
+                                        if hasCodex {
+                                            Text(shortDuration(entry.codex?.executionDuration ?? 0))
+                                                .foregroundStyle(Self.codexColor)
+                                        }
                                     }
                                     .font(.system(size: 10).bold().monospacedDigit())
                                 }
@@ -550,25 +566,37 @@ struct MenuBarView: View {
                                 .offset(y: 30)
                             }
 
-                        PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
-                            .foregroundStyle(Self.claudeColor)
-                            .symbolSize(30)
-                        PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
-                            .foregroundStyle(.purple)
-                            .symbolSize(30)
-                        PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
-                            .foregroundStyle(Self.codexColor)
-                            .symbolSize(30)
+                        if hasClaude {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
+                                .foregroundStyle(Self.claudeColor)
+                                .symbolSize(30)
+                        }
+                        if hasCursor {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
+                                .foregroundStyle(.purple)
+                                .symbolSize(30)
+                        }
+                        if hasCodex {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
+                                .foregroundStyle(Self.codexColor)
+                                .symbolSize(30)
+                        }
                     } else if !compactMode {
-                        PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
-                            .foregroundStyle(Self.claudeColor)
-                            .symbolSize(12)
-                        PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
-                            .foregroundStyle(.purple)
-                            .symbolSize(12)
-                        PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
-                            .foregroundStyle(Self.codexColor)
-                            .symbolSize(12)
+                        if hasClaude {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", claudeMins))
+                                .foregroundStyle(Self.claudeColor)
+                                .symbolSize(12)
+                        }
+                        if hasCursor {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", cursorMins))
+                                .foregroundStyle(.purple)
+                                .symbolSize(12)
+                        }
+                        if hasCodex {
+                            PointMark(x: .value("Date", d), y: .value("Minutes", codexMins))
+                                .foregroundStyle(Self.codexColor)
+                                .symbolSize(12)
+                        }
                     }
                 }
             }

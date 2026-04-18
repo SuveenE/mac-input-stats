@@ -43,6 +43,10 @@
 - **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
 - **Daily persistence** with a rolling 7-day history
 
+## Coding Tool Stats
+
+During installation, Activity Bar registers [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) for Claude Code and Cursor. These hooks notify the app when a session starts, stops, or uses a tool, allowing it to measure execution time locally. No telemetry or usage data is sent to any server — all stats are computed and stored on your machine.
+
 ## Data Storage
 
 All data is stored locally in `UserDefaults` — nothing is sent to any server. The plist file lives at:

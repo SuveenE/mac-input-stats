@@ -45,7 +45,7 @@
 
 ## Coding Tool Stats
 
-During installation, Activity Bar registers hooks for Claude Code, Cursor, and Codex. These hooks notify the app when a session starts, stops, or uses a tool, allowing it to measure execution time locally. No telemetry or usage data is sent to any server — all stats are computed and stored on your machine.
+During installation, Activity Bar registers hooks for Claude Code, Cursor, and Codex. When these tools emit events — such as tool use, prompts, or session start/end — the hook scripts send JSON payloads to a local Unix socket. Activity Bar parses these events and calculates stats like execution time and tool call counts. No telemetry or usage data is sent to any server — everything is computed and stored on your machine.
 
 ## Data Storage
 

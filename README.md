@@ -45,7 +45,7 @@
 
 ## Coding Tool Stats
 
-During installation, Activity Bar registers [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) for Claude Code and Cursor. These hooks notify the app when a session starts, stops, or uses a tool, allowing it to measure execution time locally. No telemetry or usage data is sent to any server — all stats are computed and stored on your machine.
+During installation, Activity Bar registers hooks for Claude Code, Cursor, and Codex. These hooks notify the app when a session starts, stops, or uses a tool, allowing it to measure execution time locally. No telemetry or usage data is sent to any server — all stats are computed and stored on your machine.
 
 ## Data Storage
 

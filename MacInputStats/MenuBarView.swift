@@ -128,6 +128,8 @@ struct MenuBarView: View {
                     if codexStore.totalDuration > 0 || !codexStore.activeSessions.isEmpty {
                         codexSection
                     }
+
+                    aiWeeklyComparison
                 }
                 .padding(.vertical, 8)
             }
@@ -424,6 +426,55 @@ struct MenuBarView: View {
         .padding(.vertical, 9)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .padding(.horizontal, 16)
+    }
+
+    private var aiDailyAvgLastWeek: TimeInterval {
+        let today = StatsStore.dateKey(for: Date())
+        let claudeDays = claudeStore.recentDays(count: 8).filter { $0.date != today }
+        let cursorDays = cursorStore.recentDays(count: 8).filter { $0.date != today }
+        let codexDays = codexStore.recentDays(count: 8).filter { $0.date != today }
+
+        var totalsByDate: [String: TimeInterval] = [:]
+        for day in claudeDays { totalsByDate[day.date, default: 0] += day.executionDuration }
+        for day in cursorDays { totalsByDate[day.date, default: 0] += day.executionDuration }
+        for day in codexDays { totalsByDate[day.date, default: 0] += day.executionDuration }
+
+        let daysWithData = totalsByDate.values.filter { $0 > 0 }
+        guard !daysWithData.isEmpty else { return 0 }
+        return daysWithData.reduce(0, +) / Double(daysWithData.count)
+    }
+
+    private var aiTodayTotal: TimeInterval {
+        claudeStore.totalDuration + cursorStore.totalDuration + codexStore.totalDuration
+    }
+
+    @ViewBuilder
+    private var aiWeeklyComparison: some View {
+        let avg = aiDailyAvgLastWeek
+        if avg > 0 {
+            let today = aiTodayTotal
+            let ratio = today / avg
+            let aboveAvg = ratio >= 1.0
+            let pct = Int(((ratio - 1.0) * 100).rounded())
+
+            HStack(spacing: 6) {
+                Image(systemName: aboveAvg ? "arrow.up.right" : "arrow.down.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(aboveAvg ? .green : .primary.opacity(0.45))
+
+                if pct == 0 {
+                    Text("On par with your daily avg (\(shortDuration(avg)))")
+                        .font(.caption)
+                        .foregroundStyle(.primary.opacity(0.55))
+                } else {
+                    Text("\(abs(pct))% \(aboveAvg ? "above" : "below") your daily avg (\(shortDuration(avg)))")
+                        .font(.caption)
+                        .foregroundStyle(.primary.opacity(0.55))
+                }
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 4)
+        }
     }
 
     private func claudeProjectRow(name: String, stats: ClaudeProjectStats, maxDuration: TimeInterval) -> some View {

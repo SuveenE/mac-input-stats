@@ -5,6 +5,7 @@ struct MonthlyStatsView: View {
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
     @ObservedObject var codexStore: CodexSessionStore
+    var onClose: (() -> Void)?
 
     private var inputDays: [DailyStats] { store.recentDays(count: 30) }
     private var totalKeystrokes: Int { inputDays.reduce(0) { $0 + $1.keystrokes } }
@@ -51,14 +52,27 @@ struct MonthlyStatsView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(spacing: 2) {
-            Text("Last 30 Days")
-                .font(.headline)
-            Text(dateRangeLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack {
+            Spacer()
+            VStack(spacing: 2) {
+                Text("Last 30 Days")
+                    .font(.headline)
+                Text(dateRangeLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                onClose?()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, height: 20)
+                    .background(.primary.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var dateRangeLabel: String {

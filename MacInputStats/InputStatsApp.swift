@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: FloatingPanel<AnyView>?
     private var onboardingWindow: NSWindow?
     private var monthlySidePanel: NSPanel?
+    private var monthlySideClickMonitor: Any?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -138,7 +139,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store: store,
             claudeStore: claudeStore,
             cursorStore: cursorStore,
-            codexStore: codexStore
+            codexStore: codexStore,
+            onClose: { [weak self] in self?.dismissMonthlySidePanel() }
         )
 
         let hosting = NSHostingView(rootView: view)
@@ -176,9 +178,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         monthlySidePanel = sidePanel
+
+        // Dismiss when clicking outside both panels
+        monthlySideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.dismissMonthlySidePanel()
+        }
     }
 
     private func dismissMonthlySidePanel() {
+        if let monitor = monthlySideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            monthlySideClickMonitor = nil
+        }
         guard let sidePanel = monthlySidePanel else { return }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.15

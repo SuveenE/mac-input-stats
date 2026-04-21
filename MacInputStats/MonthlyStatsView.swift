@@ -62,9 +62,9 @@ struct MonthlyStatsView: View {
         }
         .padding(16)
         .frame(width: 302)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .stroke(Color.black.opacity(0.5), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)

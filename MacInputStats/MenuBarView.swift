@@ -92,6 +92,7 @@ struct MenuBarView: View {
     var updater: SPUUpdater
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
+    var onOpenMonthlyStats: (() -> Void)?
     @State private var hoveredDate: String?
     @State private var hoveredTalkDate: String?
     @State private var expandedApp: String?
@@ -1022,6 +1023,15 @@ struct MenuBarView: View {
                 onOpenSettings?()
             } label: {
                 Text("Permissions")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.55))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                onOpenMonthlyStats?()
+            } label: {
+                Text("Monthly")
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.55))
             }

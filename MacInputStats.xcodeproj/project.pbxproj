@@ -24,6 +24,7 @@
 		AAA00015 /* ClaudeSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00016; };
 		AAA00016 /* CursorSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017; };
 		AAA00017 /* CodexSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00018; };
+		AAA00018 /* MonthlyStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00019; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +57,7 @@
 		BBB00016 /* ClaudeSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeSessionStore.swift; sourceTree = "<group>"; };
 		BBB00017 /* CursorSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSessionStore.swift; sourceTree = "<group>"; };
 		BBB00018 /* CodexSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSessionStore.swift; sourceTree = "<group>"; };
+		BBB00019 /* MonthlyStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyStatsView.swift; sourceTree = "<group>"; };
 		CCC00001 /* MacInputStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacInputStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -86,6 +88,7 @@
 				BBB00016 /* ClaudeSessionStore.swift */,
 				BBB00017 /* CursorSessionStore.swift */,
 				BBB00018 /* CodexSessionStore.swift */,
+				BBB00019 /* MonthlyStatsView.swift */,
 				BBB00008 /* Assets.xcassets */,
 				BBB00009 /* MacInputStats.entitlements */,
 				BBB00010 /* Info.plist */,
@@ -205,6 +208,7 @@
 				AAA00015 /* ClaudeSessionStore.swift in Sources */,
 				AAA00016 /* CursorSessionStore.swift in Sources */,
 				AAA00017 /* CodexSessionStore.swift in Sources */,
+				AAA00018 /* MonthlyStatsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panel: FloatingPanel<AnyView>?
     private var onboardingWindow: NSWindow?
+    private var monthlyStatsWindow: NSWindow?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -89,7 +90,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for window in NSApplication.shared.windows {
                 guard window.level == .normal,
                       !(window is FloatingPanel<AnyView>),
-                      window !== self.onboardingWindow else { continue }
+                      window !== self.onboardingWindow,
+                      window !== self.monthlyStatsWindow else { continue }
                 window.orderOut(nil)
             }
         }
@@ -124,6 +126,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboardingWindow = window
     }
 
+    private func showMonthlyStats() {
+        if let existing = monthlyStatsWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let view = MonthlyStatsView(
+            store: store,
+            claudeStore: claudeStore,
+            cursorStore: cursorStore,
+            codexStore: codexStore
+        )
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 500),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Monthly Stats"
+        window.contentView = NSHostingView(rootView: view)
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        monthlyStatsWindow = window
+    }
+
     @objc private func togglePanel() {
         if let panel, panel.isVisible {
             closePanel()
@@ -144,7 +175,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
                     NSWorkspace.shared.open(url)
                 }
-            }
+            },
+            onOpenMonthlyStats: { [weak self] in self?.showMonthlyStats() }
         )
 
         if let panel {

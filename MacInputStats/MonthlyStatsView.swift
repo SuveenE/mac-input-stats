@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum StatsRange: String, CaseIterable {
     case sevenDays = "7d"
@@ -59,6 +60,7 @@ struct MonthlyStatsView: View {
             if hasAnyAI {
                 aiSection
             }
+            exportButton
         }
         .padding(16)
         .frame(width: 302)
@@ -208,6 +210,55 @@ struct MonthlyStatsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    // MARK: - Export
+
+    private var exportButton: some View {
+        Button {
+            exportData()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 11, weight: .semibold))
+                Text("Download All Data")
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .foregroundStyle(.primary.opacity(0.55))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func exportData() {
+        let exportPayload: [String: Any] = [
+            "exportDate": ISO8601DateFormatter().string(from: Date()),
+            "inputStats": encodeToDictArray(store.days.values.sorted { $0.date < $1.date }),
+            "claudeCode": encodeToDictArray(claudeStore.days.values.sorted { $0.date < $1.date }),
+            "cursor": encodeToDictArray(cursorStore.days.values.sorted { $0.date < $1.date }),
+            "codex": encodeToDictArray(codexStore.days.values.sorted { $0.date < $1.date })
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: exportPayload, options: [.prettyPrinted, .sortedKeys]) else { return }
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "activity-bar-export.json"
+        panel.title = "Export Activity Bar Data"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? jsonData.write(to: url)
+    }
+
+    private func encodeToDictArray<T: Encodable>(_ items: [T]) -> [[String: Any]] {
+        let encoder = JSONEncoder()
+        return items.compactMap { item in
+            guard let data = try? encoder.encode(item),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            return dict
+        }
     }
 
     // MARK: - Helpers

@@ -53,15 +53,6 @@ struct MonthlyStatsView: View {
 
     private var header: some View {
         HStack {
-            Spacer()
-            VStack(spacing: 2) {
-                Text("Last 30 Days")
-                    .font(.headline)
-                Text(dateRangeLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
             Button {
                 onClose?()
             } label: {
@@ -72,6 +63,15 @@ struct MonthlyStatsView: View {
                     .background(.primary.opacity(0.08), in: Circle())
             }
             .buttonStyle(.plain)
+            Spacer()
+            VStack(spacing: 2) {
+                Text("Last 30 Days")
+                    .font(.headline)
+                Text(dateRangeLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
         }
     }
 
@@ -85,26 +85,33 @@ struct MonthlyStatsView: View {
 
     private var inputGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-            miniStatCard(title: "Keystrokes", value: formatted(totalKeystrokes), icon: "keyboard")
-            miniStatCard(title: "Clicks", value: formatted(totalClicks), icon: "cursorarrow.click.2")
-            miniStatCard(title: "Scrolls", value: formatted(totalScrolls), icon: "scroll")
-            miniStatCard(title: "Talk Time", value: AppStats.formatDuration(totalTalkSeconds), icon: "waveform")
+            statCell(icon: "keyboard", value: formatted(totalKeystrokes), label: "Keystrokes")
+            statCell(icon: "cursorarrow.click.2", value: formatted(totalClicks), label: "Clicks")
+            statCell(icon: "scroll", value: formatted(totalScrolls), label: "Scrolls")
+            statCell(icon: "waveform", value: AppStats.formatDuration(totalTalkSeconds), label: "Talk Time")
         }
     }
 
-    private func miniStatCard(title: String, value: String, icon: String) -> some View {
-        VStack(spacing: 4) {
+    private func statCell(icon: String, value: String, label: String, tint: Color = .blue) -> some View {
+        HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3.bold().monospacedDigit())
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(tint, in: Circle())
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.primary.opacity(0.5))
+            }
+
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
@@ -112,47 +119,49 @@ struct MonthlyStatsView: View {
 
     private var aiSection: some View {
         VStack(alignment: .leading, spacing: 6) {
+            Divider().padding(.horizontal, 0)
             Text("Time AI Worked for You")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 4)
+                .font(.headline)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 2)
 
             VStack(spacing: 4) {
                 if totalClaudeDuration > 0 {
-                    aiToolRow(name: "Claude Code", duration: totalClaudeDuration, tint: Self.claudeColor, assetName: "ClaudeCodeIcon", iconSize: 12)
+                    aiToolRow(name: "Claude Code", duration: totalClaudeDuration, tint: Self.claudeColor, assetName: "ClaudeCodeIcon", iconSize: 14)
                 }
                 if totalCursorDuration > 0 {
-                    aiToolRow(name: "Cursor", duration: totalCursorDuration, tint: Self.cursorColor, assetName: "CursorIcon", iconSize: 13)
+                    aiToolRow(name: "Cursor", duration: totalCursorDuration, tint: Self.cursorColor, assetName: "CursorIcon", iconSize: 15)
                 }
                 if totalCodexDuration > 0 {
-                    aiToolRow(name: "Codex", duration: totalCodexDuration, tint: Self.codexColor, assetName: "CodexIcon", iconSize: 13)
+                    aiToolRow(name: "Codex", duration: totalCodexDuration, tint: Self.codexColor, assetName: "CodexIcon", iconSize: 15)
                 }
             }
         }
     }
 
     private func aiToolRow(name: String, duration: TimeInterval, tint: Color, assetName: String, iconSize: CGFloat) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Image(assetName)
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .foregroundStyle(.white)
                 .frame(width: iconSize, height: iconSize)
-                .frame(width: 22, height: 22)
+                .frame(width: 26, height: 26)
                 .background(tint, in: Circle())
 
             Text(name)
-                .font(.callout)
+                .font(.body)
                 .lineLimit(1)
 
             Spacer()
 
             Text(AppStats.formatDuration(duration))
-                .font(.callout.weight(.semibold).monospacedDigit())
+                .font(.body.weight(.semibold).monospacedDigit())
                 .foregroundStyle(.primary.opacity(0.55))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 

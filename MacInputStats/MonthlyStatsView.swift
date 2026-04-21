@@ -60,7 +60,6 @@ struct MonthlyStatsView: View {
             if hasAnyAI {
                 aiSection
             }
-            exportButton
         }
         .padding(16)
         .frame(width: 302)
@@ -96,6 +95,17 @@ struct MonthlyStatsView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            Button {
+                exportData()
+            } label: {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.primary.opacity(0.6))
+                    .frame(width: 22, height: 22)
+                    .background(.primary.opacity(0.12), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Download data")
         }
     }
 
@@ -213,24 +223,6 @@ struct MonthlyStatsView: View {
     }
 
     // MARK: - Export
-
-    private var exportButton: some View {
-        Button {
-            exportData()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Download All Data")
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .foregroundStyle(.primary.opacity(0.55))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
 
     private func exportData() {
         let exportPayload: [String: Any] = [

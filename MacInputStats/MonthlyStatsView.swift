@@ -79,10 +79,10 @@ struct MonthlyStatsView: View {
                 onClose?()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20, height: 20)
-                    .background(.primary.opacity(0.08), in: Circle())
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.primary.opacity(0.6))
+                    .frame(width: 22, height: 22)
+                    .background(.primary.opacity(0.12), in: Circle())
             }
             .buttonStyle(.plain)
             Spacer()

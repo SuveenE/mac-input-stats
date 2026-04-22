@@ -95,8 +95,9 @@ struct MonthlyStatsView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button {
-                exportData()
+            Menu {
+                Button("Export as JSON") { exportJSON() }
+                Button("Export as CSV") { exportCSV() }
             } label: {
                 Image(systemName: "square.and.arrow.down")
                     .font(.system(size: 10, weight: .bold))
@@ -104,7 +105,9 @@ struct MonthlyStatsView: View {
                     .frame(width: 22, height: 22)
                     .background(.primary.opacity(0.12), in: Circle())
             }
-            .buttonStyle(.plain)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
             .help("Download data")
         }
     }
@@ -224,7 +227,7 @@ struct MonthlyStatsView: View {
 
     // MARK: - Export
 
-    private func exportData() {
+    private func exportJSON() {
         let exportPayload: [String: Any] = [
             "exportDate": ISO8601DateFormatter().string(from: Date()),
             "inputStats": encodeToDictArray(store.days.values.sorted { $0.date < $1.date }),
@@ -242,6 +245,49 @@ struct MonthlyStatsView: View {
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
         try? jsonData.write(to: url)
+    }
+
+    private func exportCSV() {
+        var dateSet = Set(store.days.keys)
+        dateSet.formUnion(claudeStore.days.keys)
+        dateSet.formUnion(cursorStore.days.keys)
+        dateSet.formUnion(codexStore.days.keys)
+        let allDates = dateSet.sorted()
+
+        var rows: [[String]] = []
+        rows.append([
+            "date",
+            "keystrokes", "clicks", "scrolls", "talk_time_seconds",
+            "claude_code_seconds", "cursor_seconds", "codex_seconds"
+        ])
+
+        for date in allDates {
+            let input = store.days[date]
+            let claude = claudeStore.days[date]
+            let cursor = cursorStore.days[date]
+            let codex = codexStore.days[date]
+
+            rows.append([
+                date,
+                "\(input?.keystrokes ?? 0)",
+                "\(input?.pointerClicks ?? 0)",
+                "\(input?.scrollEvents ?? 0)",
+                String(format: "%.1f", input?.talkDurationSeconds ?? 0),
+                String(format: "%.1f", claude?.executionDuration ?? 0),
+                String(format: "%.1f", cursor?.executionDuration ?? 0),
+                String(format: "%.1f", codex?.executionDuration ?? 0)
+            ])
+        }
+
+        let csvString = rows.map { $0.joined(separator: ",") }.joined(separator: "\n")
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "activity-bar-export.csv"
+        panel.title = "Export Activity Bar Data"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? csvString.write(to: url, atomically: true, encoding: .utf8)
     }
 
     private func encodeToDictArray<T: Encodable>(_ items: [T]) -> [[String: Any]] {

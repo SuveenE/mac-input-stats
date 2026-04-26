@@ -13,6 +13,10 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 12) {
             header
+            Text("Categorize your apps by adding them to a project to see project-level stats.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             projectList
             if !isAddingNew && editingProjectId == nil {
                 addButton
@@ -22,7 +26,6 @@ struct SettingsView: View {
         }
         .padding(16)
         .frame(width: 302)
-        .frame(minHeight: 400)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 6, style: .continuous)

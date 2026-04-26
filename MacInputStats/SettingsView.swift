@@ -10,6 +10,12 @@ struct SettingsView: View {
     @State private var draftApps: Set<String> = []
     @State private var isAddingNew: Bool = false
 
+    @AppStorage("showInputStats") private var showInputStats = true
+    @AppStorage("showAITools") private var showAITools = true
+    @AppStorage("showTopApps") private var showTopApps = true
+    @AppStorage("showCategories") private var showCategories = true
+    @AppStorage("showTrends") private var showTrends = true
+
     var body: some View {
         VStack(spacing: 12) {
             header
@@ -21,6 +27,8 @@ struct SettingsView: View {
             if !isAddingNew && editingCategoryId == nil {
                 addButton
             }
+            Divider().padding(.horizontal, 0)
+            customizeSection
             Divider().padding(.horizontal, 0)
             permissionsLink
         }
@@ -241,6 +249,31 @@ struct SettingsView: View {
             .foregroundStyle(.blue)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Customize
+
+    private var customizeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Customize")
+                .font(.headline)
+
+            VStack(spacing: 4) {
+                sectionToggle("Input Stats", isOn: $showInputStats)
+                sectionToggle("Time AI Worked for You", isOn: $showAITools)
+                sectionToggle("Top Apps", isOn: $showTopApps)
+                sectionToggle("Screen Time by Category", isOn: $showCategories)
+                sectionToggle("Trends", isOn: $showTrends)
+            }
+        }
+    }
+
+    private func sectionToggle(_ label: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            Text(label)
+                .font(.body)
+        }
+        .toggleStyle(.checkbox)
     }
 
     // MARK: - Permissions

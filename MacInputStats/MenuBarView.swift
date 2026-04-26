@@ -101,6 +101,11 @@ struct MenuBarView: View {
     @AppStorage("chartRange") private var chartRange: ChartRange = .sevenDays
     @State private var trendMode: TrendMode = .codingTools
     @State private var selectedDateOffset: Int = 0
+    @AppStorage("showInputStats") private var showInputStats = true
+    @AppStorage("showAITools") private var showAITools = true
+    @AppStorage("showTopApps") private var showTopApps = true
+    @AppStorage("showCategories") private var showCategories = true
+    @AppStorage("showTrends") private var showTrends = true
 
     private let panelWidth: CGFloat = 340
 
@@ -148,65 +153,73 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerBar
-            todayStats
-            if selectedClaudeDuration > 0 || selectedCursorDuration > 0 || selectedCodexDuration > 0
-                || (isViewingToday && (!claudeStore.activeSessions.isEmpty || !cursorStore.activeSessions.isEmpty || !codexStore.activeSessions.isEmpty)) {
-                Divider().padding(.horizontal, 12)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Time AI Worked for You")
-                        .font(.headline)
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 2)
-
-                    if selectedClaudeDuration > 0 || (isViewingToday && !claudeStore.activeSessions.isEmpty) {
-                        codingToolRow(
-                            name: "Claude Code",
-                            duration: selectedClaudeDuration,
-                            tint: Self.claudeColor,
-                            assetName: "ClaudeCodeIcon",
-                            iconSize: 14
-                        )
-                    }
-                    if selectedCursorDuration > 0 || (isViewingToday && !cursorStore.activeSessions.isEmpty) {
-                        codingToolRow(
-                            name: "Cursor",
-                            duration: selectedCursorDuration,
-                            tint: Self.cursorColor,
-                            assetName: "CursorIcon",
-                            iconSize: 15
-                        )
-                    }
-                    if selectedCodexDuration > 0 || (isViewingToday && !codexStore.activeSessions.isEmpty) {
-                        codingToolRow(
-                            name: "Codex",
-                            duration: selectedCodexDuration,
-                            tint: Self.codexColor,
-                            assetName: "CodexIcon",
-                            iconSize: 15
-                        )
-                    }
-
-                    if isViewingToday {
-                        aiWeeklyComparison
-                    }
-                }
-                .padding(.vertical, 8)
+            if showInputStats {
+                todayStats
             }
-            Divider().padding(.horizontal, 12)
-            topAppsSection
-            if categoryStore.hasCategories {
+            if showAITools {
+                if selectedClaudeDuration > 0 || selectedCursorDuration > 0 || selectedCodexDuration > 0
+                    || (isViewingToday && (!claudeStore.activeSessions.isEmpty || !cursorStore.activeSessions.isEmpty || !codexStore.activeSessions.isEmpty)) {
+                    Divider().padding(.horizontal, 12)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Time AI Worked for You")
+                            .font(.headline)
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 2)
+
+                        if selectedClaudeDuration > 0 || (isViewingToday && !claudeStore.activeSessions.isEmpty) {
+                            codingToolRow(
+                                name: "Claude Code",
+                                duration: selectedClaudeDuration,
+                                tint: Self.claudeColor,
+                                assetName: "ClaudeCodeIcon",
+                                iconSize: 14
+                            )
+                        }
+                        if selectedCursorDuration > 0 || (isViewingToday && !cursorStore.activeSessions.isEmpty) {
+                            codingToolRow(
+                                name: "Cursor",
+                                duration: selectedCursorDuration,
+                                tint: Self.cursorColor,
+                                assetName: "CursorIcon",
+                                iconSize: 15
+                            )
+                        }
+                        if selectedCodexDuration > 0 || (isViewingToday && !codexStore.activeSessions.isEmpty) {
+                            codingToolRow(
+                                name: "Codex",
+                                duration: selectedCodexDuration,
+                                tint: Self.codexColor,
+                                assetName: "CodexIcon",
+                                iconSize: 15
+                            )
+                        }
+
+                        if isViewingToday {
+                            aiWeeklyComparison
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            if showTopApps {
+                Divider().padding(.horizontal, 12)
+                topAppsSection
+            }
+            if showCategories && categoryStore.hasCategories {
                 Divider().padding(.horizontal, 12)
                 categoryStatsSection
             }
-            Divider().padding(.horizontal, 12)
-            statsDisclosure
-            if statsExpanded {
-                if trendMode == .codingTools {
-                    codingToolsChart
-                } else {
-                    weeklyChart
-                    Divider().padding(.horizontal, 12)
-                    talkTimeSection
+            if showTrends {
+                Divider().padding(.horizontal, 12)
+                statsDisclosure
+                if statsExpanded {
+                    if trendMode == .codingTools {
+                        codingToolsChart
+                    } else {
+                        weeklyChart
+                        Divider().padding(.horizontal, 12)
+                        talkTimeSection
+                    }
                 }
             }
             Divider().padding(.horizontal, 12)

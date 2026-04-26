@@ -227,7 +227,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hosting = NSHostingView(rootView: view)
         let fittingSize = hosting.fittingSize
 
-        let sidePanel = NSPanel(
+        let sidePanel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: fittingSize.width, height: fittingSize.height),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
@@ -240,6 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sidePanel.hasShadow = false
         sidePanel.isMovable = false
         sidePanel.isReleasedWhenClosed = false
+        sidePanel.becomesKeyOnlyIfNeeded = true
 
         sidePanel.contentView = hosting
 
@@ -251,6 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         sidePanel.alphaValue = 0
         sidePanel.orderFront(nil)
+        sidePanel.makeKey()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.2
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -326,6 +328,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.wantsLayer = true
         button.layer?.backgroundColor = nil
     }
+}
+
+private class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }
 
 extension AppDelegate: NSWindowDelegate {

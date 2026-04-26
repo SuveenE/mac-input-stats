@@ -231,7 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let sidePanel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: fittingSize.width, height: fittingSize.height),
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -267,8 +267,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         sidePanel.alphaValue = 0
         sidePanel.orderFront(nil)
-        panel?.suppressResignDismiss = true
-        sidePanel.makeKey()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.2
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -276,6 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         settingsSidePanel = sidePanel
+        panel?.suppressResignDismiss = true
 
         DispatchQueue.main.async { [weak self] in
             self?.settingsSideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in

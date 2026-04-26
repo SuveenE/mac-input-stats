@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var draftApps: Set<String> = []
     @State private var isAddingNew: Bool = false
 
+    private var isEditing: Bool { editingCategoryId != nil || isAddingNew }
+
     @AppStorage("showInputStats") private var showInputStats = true
     @AppStorage("showAITools") private var showAITools = true
     @AppStorage("showTopApps") private var showTopApps = true
@@ -44,13 +46,15 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Categories")
                 .font(.headline)
-            Text("Categorize your apps by adding them to a category to see category-level stats.")
-                .font(.caption)
-                .foregroundStyle(.primary.opacity(0.55))
 
-            categoryList
+            if isEditing {
+                categoryEditor(existingId: editingCategoryId)
+            } else {
+                Text("Categorize your apps by adding them to a category to see category-level stats.")
+                    .font(.caption)
+                    .foregroundStyle(.primary.opacity(0.55))
 
-            if !isAddingNew && editingCategoryId == nil {
+                categoryList
                 addButton
             }
         }
@@ -136,15 +140,9 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 8) {
                         ForEach(categoryStore.categories) { category in
-                            if editingCategoryId == category.id {
-                                categoryEditor(existingId: category.id)
-                            } else {
+                            if editingCategoryId != category.id {
                                 categoryCard(category)
                             }
-                        }
-
-                        if isAddingNew {
-                            categoryEditor(existingId: nil)
                         }
                     }
                 }
@@ -227,7 +225,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 200)
+                .frame(maxHeight: 250)
             }
 
             Divider()

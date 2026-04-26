@@ -199,6 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             monthlySideClickMonitor = nil
         }
         guard let sidePanel = monthlySidePanel else { return }
+        self.monthlySidePanel = nil
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.15
             ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)

@@ -10,17 +10,18 @@ struct SettingsView: View {
     @State private var draftApps: Set<String> = []
     @State private var isAddingNew: Bool = false
 
+    @AppStorage("showInputStats") private var showInputStats = true
+    @AppStorage("showAITools") private var showAITools = true
+    @AppStorage("showTopApps") private var showTopApps = true
+    @AppStorage("showCategories") private var showCategories = true
+    @AppStorage("showTrends") private var showTrends = true
+
     var body: some View {
         VStack(spacing: 12) {
             header
-            Text("Categorize your apps by adding them to a category to see category-level stats.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            categoryList
-            if !isAddingNew && editingCategoryId == nil {
-                addButton
-            }
+            categoriesBlock
+            Divider().padding(.horizontal, 0)
+            customizeBlock
             Divider().padding(.horizontal, 0)
             permissionsLink
         }
@@ -35,6 +36,68 @@ struct SettingsView: View {
         .animation(.easeInOut(duration: 0.2), value: categoryStore.categories)
         .animation(.easeInOut(duration: 0.2), value: editingCategoryId)
         .animation(.easeInOut(duration: 0.2), value: isAddingNew)
+    }
+
+    // MARK: - Categories Block
+
+    private var categoriesBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Categories")
+                .font(.headline)
+            Text("Categorize your apps by adding them to a category to see category-level stats.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            categoryList
+
+            if !isAddingNew && editingCategoryId == nil {
+                addButton
+            }
+        }
+    }
+
+    // MARK: - Customize Block
+
+    private var customizeBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Customize your home screen")
+                .font(.headline)
+            Text("Toggle which sections appear on the main panel.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 4) {
+                customizeToggleRow("Input Stats", icon: "keyboard", isOn: $showInputStats)
+                customizeToggleRow("Time AI Worked for You", icon: "cpu", isOn: $showAITools)
+                customizeToggleRow("Top Apps", icon: "square.stack", isOn: $showTopApps)
+                customizeToggleRow("Screen Time by Category", icon: "folder.fill", isOn: $showCategories)
+                customizeToggleRow("Trends", icon: "chart.xyaxis.line", isOn: $showTrends)
+            }
+        }
+    }
+
+    private func customizeToggleRow(_ label: String, icon: String, isOn: Binding<Bool>) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: isOn.wrappedValue ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(isOn.wrappedValue ? .blue : .primary.opacity(0.3))
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.primary.opacity(0.55))
+                    .frame(width: 16)
+                Text(label)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Header
@@ -52,7 +115,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("Categories")
+            Text("Settings")
                 .font(.headline)
             Spacer()
             Color.clear.frame(width: 22, height: 22)

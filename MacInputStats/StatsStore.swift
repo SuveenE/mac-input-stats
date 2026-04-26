@@ -48,6 +48,12 @@ final class StatsStore: ObservableObject {
         days.keys.sorted()
     }
 
+    var allAppNames: Set<String> {
+        days.values.reduce(into: Set<String>()) { result, day in
+            result.formUnion(day.perApp.keys)
+        }
+    }
+
     var recentDays: [DailyStats] {
         recentDays(count: 7)
     }

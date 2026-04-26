@@ -24,6 +24,7 @@ struct MonthlyStatsView: View {
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
     @ObservedObject var codexStore: CodexSessionStore
+    @ObservedObject var projectStore: ProjectStore
     var onClose: (() -> Void)?
 
     @State private var selectedRange: StatsRange = .allTime
@@ -57,6 +58,9 @@ struct MonthlyStatsView: View {
             header
             rangePicker
             inputGrid
+            if projectStore.hasProjects {
+                projectSection
+            }
             if hasAnyAI {
                 aiSection
             }
@@ -172,6 +176,66 @@ struct MonthlyStatsView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    // MARK: - Projects Section
+
+    private func aggregatedProjectStats(for project: Project) -> AppStats {
+        var combined = AppStats()
+        for day in inputDays {
+            let s = day.stats(for: project)
+            combined.keystrokes += s.keystrokes
+            combined.pointerClicks += s.pointerClicks
+            combined.scrollEvents += s.scrollEvents
+            combined.talkDurationSeconds += s.talkDurationSeconds
+            combined.screenTimeSeconds += s.screenTimeSeconds
+        }
+        return combined
+    }
+
+    private var projectSection: some View {
+        let activeProjects = projectStore.projects.filter { aggregatedProjectStats(for: $0).screenTimeSeconds > 0 }
+
+        return Group {
+            if !activeProjects.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Divider().padding(.horizontal, 0)
+                    Text("Projects")
+                        .font(.headline)
+                        .padding(.horizontal, 6)
+                        .padding(.bottom, 2)
+
+                    VStack(spacing: 4) {
+                        ForEach(activeProjects) { project in
+                            let stats = aggregatedProjectStats(for: project)
+                            projectRow(name: project.name, screenTime: stats.screenTimeSeconds)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func projectRow(name: String, screenTime: Double) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.blue)
+                .frame(width: 26, height: 26)
+
+            Text(name)
+                .font(.body)
+                .lineLimit(1)
+
+            Spacer()
+
+            Text(AppStats.formatDuration(screenTime))
+                .font(.body.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.primary.opacity(0.55))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 

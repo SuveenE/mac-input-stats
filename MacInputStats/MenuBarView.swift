@@ -89,6 +89,7 @@ struct MenuBarView: View {
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
     @ObservedObject var codexStore: CodexSessionStore
+    @ObservedObject var projectStore: ProjectStore
     var updater: SPUUpdater
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
@@ -193,6 +194,10 @@ struct MenuBarView: View {
             }
             Divider().padding(.horizontal, 12)
             topAppsSection
+            if projectStore.hasProjects {
+                Divider().padding(.horizontal, 12)
+                projectStatsSection
+            }
             Divider().padding(.horizontal, 12)
             statsDisclosure
             if statsExpanded {
@@ -453,6 +458,95 @@ struct MenuBarView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.primary.opacity(0.55))
         }
+    }
+
+    // MARK: - Projects
+
+    @State private var expandedProject: String?
+
+    private var projectStatsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Projects")
+                .font(.headline)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 2)
+
+            let day = selectedDayStats
+            let activeProjects = projectStore.projects.filter { day.stats(for: $0).screenTimeSeconds > 0 }
+
+            if activeProjects.isEmpty {
+                Text("No project activity")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.55))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 6)
+            } else {
+                let maxTime = activeProjects.map { day.stats(for: $0).screenTimeSeconds }.max() ?? 1
+                ForEach(activeProjects) { project in
+                    let stats = day.stats(for: project)
+                    projectRow(project: project, stats: stats, maxScreenTime: maxTime)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private func projectRow(project: Project, stats: AppStats, maxScreenTime: Double) -> some View {
+        let isExpanded = expandedProject == project.name
+
+        return VStack(spacing: 3) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    expandedProject = isExpanded ? nil : project.name
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.primary.opacity(0.55))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.blue)
+
+                    Text(project.name)
+                        .font(.body)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(AppStats.formatDuration(stats.screenTimeSeconds))
+                        .font(.body.monospacedDigit())
+                        .foregroundStyle(.primary.opacity(0.55))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            GeometryReader { geo in
+                let ratio = CGFloat(stats.screenTimeSeconds) / CGFloat(Swift.max(maxScreenTime, 1))
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(.blue.opacity(0.25))
+                    .frame(width: geo.size.width * ratio, height: 3)
+            }
+            .frame(height: 3)
+
+            if isExpanded {
+                HStack(spacing: 16) {
+                    appDetailItem(icon: "keyboard", value: "\(stats.keystrokes)")
+                    appDetailItem(icon: "cursorarrow.click.2", value: "\(stats.pointerClicks)")
+                    appDetailItem(icon: "scroll", value: "\(stats.scrollEvents)")
+                    if stats.talkDurationSeconds > 0 {
+                        appDetailItem(icon: "waveform", value: stats.formattedTalkTime)
+                    }
+                }
+                .padding(.top, 4)
+                .padding(.leading, 16)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
     }
 
     // MARK: - Claude Code
@@ -1111,11 +1205,12 @@ struct MenuBarView: View {
             Button {
                 onOpenSettings?()
             } label: {
-                Text("Permissions")
-                    .font(.subheadline)
+                Image(systemName: "gearshape")
+                    .font(.system(size: 13))
                     .foregroundStyle(.primary.opacity(0.55))
             }
             .buttonStyle(.plain)
+            .help("Settings")
 
             Button {
                 onOpenMonthlyStats?()

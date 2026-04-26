@@ -33,11 +33,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let codexStore = CodexSessionStore()
     private var claudeServer: ClaudeSocketServer?
 
+    let projectStore = ProjectStore()
+
     private var statusItem: NSStatusItem!
     private var panel: FloatingPanel<AnyView>?
     private var onboardingWindow: NSWindow?
     private var monthlySidePanel: NSPanel?
     private var monthlySideClickMonitor: Any?
+    private var settingsSidePanel: NSPanel?
+    private var settingsSideClickMonitor: Any?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -92,7 +96,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard window.level == .normal,
                       !(window is FloatingPanel<AnyView>),
                       window !== self.onboardingWindow,
-                      window !== self.monthlySidePanel else { continue }
+                      window !== self.monthlySidePanel,
+                      window !== self.settingsSidePanel else { continue }
                 window.orderOut(nil)
             }
         }
@@ -133,6 +138,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        dismissSettingsSidePanel()
+
         guard let mainPanel = panel, mainPanel.isVisible else { return }
 
         let view = MonthlyStatsView(
@@ -140,6 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             claudeStore: claudeStore,
             cursorStore: cursorStore,
             codexStore: codexStore,
+            projectStore: projectStore,
             onClose: { [weak self] in self?.dismissMonthlySidePanel() }
         )
 
@@ -200,6 +208,80 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
     }
 
+    private func toggleSettings() {
+        if let existing = settingsSidePanel, existing.isVisible {
+            dismissSettingsSidePanel()
+            return
+        }
+
+        dismissMonthlySidePanel()
+
+        guard let mainPanel = panel, mainPanel.isVisible else { return }
+
+        let view = SettingsView(
+            projectStore: projectStore,
+            store: store,
+            onClose: { [weak self] in self?.dismissSettingsSidePanel() }
+        )
+
+        let hosting = NSHostingView(rootView: view)
+        let fittingSize = hosting.fittingSize
+
+        let sidePanel = KeyablePanel(
+            contentRect: NSRect(x: 0, y: 0, width: fittingSize.width, height: fittingSize.height),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        sidePanel.isFloatingPanel = true
+        sidePanel.level = mainPanel.level
+        sidePanel.isOpaque = false
+        sidePanel.backgroundColor = .clear
+        sidePanel.hasShadow = false
+        sidePanel.isMovable = false
+        sidePanel.isReleasedWhenClosed = false
+
+        sidePanel.contentView = hosting
+
+        let mainFrame = mainPanel.frame
+        let gap: CGFloat = 8
+        let x = mainFrame.minX - fittingSize.width - gap
+        let y = mainFrame.maxY - fittingSize.height
+        sidePanel.setFrame(NSRect(x: x, y: y, width: fittingSize.width, height: fittingSize.height), display: true)
+
+        sidePanel.alphaValue = 0
+        sidePanel.orderFront(nil)
+        panel?.suppressResignDismiss = true
+        sidePanel.makeKey()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.2
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            sidePanel.animator().alphaValue = 1
+        }
+
+        settingsSidePanel = sidePanel
+
+        settingsSideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.dismissSettingsSidePanel()
+        }
+    }
+
+    private func dismissSettingsSidePanel() {
+        if let monitor = settingsSideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            settingsSideClickMonitor = nil
+        }
+        panel?.suppressResignDismiss = false
+        guard let sidePanel = settingsSidePanel else { return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            sidePanel.animator().alphaValue = 0
+        }, completionHandler: {
+            sidePanel.orderOut(nil)
+        })
+    }
+
     @objc private func togglePanel() {
         if let panel, panel.isVisible {
             closePanel()
@@ -214,13 +296,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             claudeStore: claudeStore,
             cursorStore: cursorStore,
             codexStore: codexStore,
+            projectStore: projectStore,
             updater: updaterController.updater,
             onClose: { [weak self] in self?.closePanel() },
-            onOpenSettings: {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
-                    NSWorkspace.shared.open(url)
-                }
-            },
+            onOpenSettings: { [weak self] in self?.toggleSettings() },
             onOpenMonthlyStats: { [weak self] in self?.toggleMonthlyStats() }
         )
 
@@ -240,6 +319,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func closePanel() {
         dismissMonthlySidePanel()
+        dismissSettingsSidePanel()
         panel?.dismiss()
         setIconActive(false)
     }
@@ -248,6 +328,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         button.wantsLayer = true
         button.layer?.backgroundColor = nil
+    }
+}
+
+private class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown {
+            makeKey()
+        }
+        super.sendEvent(event)
     }
 }
 

@@ -49,9 +49,11 @@ final class StatsStore: ObservableObject {
     }
 
     var allAppNames: Set<String> {
-        days.values.reduce(into: Set<String>()) { result, day in
+        var names = days.values.reduce(into: Set<String>()) { result, day in
             result.formUnion(day.perApp.keys)
         }
+        names.remove("")
+        return names
     }
 
     var recentDays: [DailyStats] {

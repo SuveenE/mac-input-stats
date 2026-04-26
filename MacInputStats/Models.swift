@@ -48,7 +48,7 @@ struct DailyStats: Codable, Identifiable, Equatable {
         AppStats.formatDuration(talkDurationSeconds)
     }
 
-    private static let hiddenApps: Set<String> = ["loginwindow"]
+    private static let hiddenApps: Set<String> = ["loginwindow", ""]
 
     /// Top apps sorted by screen time, descending.
     var topApps: [(name: String, stats: AppStats)] {

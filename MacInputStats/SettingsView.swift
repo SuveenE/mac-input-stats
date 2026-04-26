@@ -50,7 +50,11 @@ struct SettingsView: View {
 
             categoryList
 
-            if !isAddingNew && editingCategoryId == nil {
+            if editingCategoryId != nil {
+                categoryEditor(existingId: editingCategoryId)
+            } else if isAddingNew {
+                categoryEditor(existingId: nil)
+            } else {
                 addButton
             }
         }
@@ -136,15 +140,9 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 8) {
                         ForEach(categoryStore.categories) { category in
-                            if editingCategoryId == category.id {
-                                categoryEditor(existingId: category.id)
-                            } else {
+                            if editingCategoryId != category.id {
                                 categoryCard(category)
                             }
-                        }
-
-                        if isAddingNew {
-                            categoryEditor(existingId: nil)
                         }
                     }
                 }

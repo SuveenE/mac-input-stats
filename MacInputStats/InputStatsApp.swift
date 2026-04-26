@@ -265,10 +265,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         hosting.postsFrameChangedNotifications = true
 
+        panel?.suppressResignDismiss = true
         sidePanel.alphaValue = 0
         sidePanel.orderFront(nil)
-        panel?.suppressResignDismiss = true
-        sidePanel.makeKey()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.2
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)

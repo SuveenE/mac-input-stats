@@ -46,7 +46,7 @@ struct SettingsView: View {
                 .font(.headline)
             Text("Categorize your apps by adding them to a category to see category-level stats.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.55))
 
             categoryList
 
@@ -64,7 +64,7 @@ struct SettingsView: View {
                 .font(.headline)
             Text("Toggle which sections appear on the main panel.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.55))
 
             VStack(spacing: 4) {
                 customizeToggleRow("Input Stats", icon: "keyboard", isOn: $showInputStats)
@@ -198,8 +198,8 @@ struct SettingsView: View {
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(.blue.opacity(0.1), in: Capsule())
-                    .foregroundStyle(.blue)
+                    .background(.primary.opacity(0.08), in: Capsule())
+                    .foregroundStyle(.primary.opacity(0.7))
             }
         }
     }

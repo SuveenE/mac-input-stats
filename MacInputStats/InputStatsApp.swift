@@ -275,6 +275,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel?.suppressResignDismiss = false
         guard let sidePanel = settingsSidePanel else { return }
+        self.settingsSidePanel = nil
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.15
             ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)

@@ -58,10 +58,10 @@ struct MonthlyStatsView: View {
             header
             rangePicker
             inputGrid
-            topAppsSection
             if hasAnyAI {
                 aiSection
             }
+            topAppsSection
             if categoryStore.hasCategories {
                 categorySection
             }

@@ -252,6 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         sidePanel.alphaValue = 0
         sidePanel.orderFront(nil)
+        panel?.suppressResignDismiss = true
         sidePanel.makeKey()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.2
@@ -271,6 +272,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSEvent.removeMonitor(monitor)
             settingsSideClickMonitor = nil
         }
+        panel?.suppressResignDismiss = false
         guard let sidePanel = settingsSidePanel else { return }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.15

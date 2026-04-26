@@ -48,6 +48,7 @@ final class FloatingPanel<Content: View>: NSPanel {
     private let hostingView: TransparentHostingView<Content>
     private let hitTestView = PanelHitTestView()
     var onDismiss: (() -> Void)?
+    var suppressResignDismiss = false
 
     /// The top edge of the panel in screen coordinates (kept fixed during resize).
     private var anchoredTopY: CGFloat = 0
@@ -158,6 +159,7 @@ final class FloatingPanel<Content: View>: NSPanel {
 
     override func resignKey() {
         super.resignKey()
+        if suppressResignDismiss { return }
         dismiss()
         onDismiss?()
     }

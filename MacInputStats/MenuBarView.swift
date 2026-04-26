@@ -577,12 +577,6 @@ struct MenuBarView: View {
             }
             .frame(height: 2)
 
-            HStack(spacing: 12) {
-                appDetailItem(icon: "keyboard", value: "\(stats.keystrokes)")
-                appDetailItem(icon: "cursorarrow.click.2", value: "\(stats.pointerClicks)")
-                appDetailItem(icon: "scroll", value: "\(stats.scrollEvents)")
-            }
-            .padding(.top, 1)
         }
         .padding(.vertical, 2)
     }

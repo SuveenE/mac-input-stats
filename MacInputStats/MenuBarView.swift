@@ -89,7 +89,7 @@ struct MenuBarView: View {
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
     @ObservedObject var codexStore: CodexSessionStore
-    @ObservedObject var projectStore: ProjectStore
+    @ObservedObject var categoryStore: CategoryStore
     var updater: SPUUpdater
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
@@ -194,9 +194,9 @@ struct MenuBarView: View {
             }
             Divider().padding(.horizontal, 12)
             topAppsSection
-            if projectStore.hasProjects {
+            if categoryStore.hasCategories {
                 Divider().padding(.horizontal, 12)
-                projectStatsSection
+                categoryStatsSection
             }
             Divider().padding(.horizontal, 12)
             statsDisclosure
@@ -462,29 +462,29 @@ struct MenuBarView: View {
 
     // MARK: - Projects
 
-    @State private var expandedProject: String?
+    @State private var expandedCategory: String?
 
-    private var projectStatsSection: some View {
+    private var categoryStatsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Projects")
+            Text("Categories")
                 .font(.headline)
                 .padding(.horizontal, 6)
                 .padding(.bottom, 2)
 
             let day = selectedDayStats
-            let activeProjects = projectStore.projects.filter { day.stats(for: $0).screenTimeSeconds > 0 }
+            let activeCategories = categoryStore.categories.filter { day.stats(for: $0).screenTimeSeconds > 0 }
 
-            if activeProjects.isEmpty {
-                Text("No project activity")
+            if activeCategories.isEmpty {
+                Text("No category activity")
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.55))
                     .padding(.vertical, 4)
                     .padding(.horizontal, 6)
             } else {
-                let maxTime = activeProjects.map { day.stats(for: $0).screenTimeSeconds }.max() ?? 1
-                ForEach(activeProjects) { project in
-                    let stats = day.stats(for: project)
-                    projectRow(project: project, stats: stats, maxScreenTime: maxTime)
+                let maxTime = activeCategories.map { day.stats(for: $0).screenTimeSeconds }.max() ?? 1
+                ForEach(activeCategories) { category in
+                    let stats = day.stats(for: category)
+                    categoryRow(category: category, stats: stats, maxScreenTime: maxTime)
                 }
             }
         }
@@ -492,13 +492,13 @@ struct MenuBarView: View {
         .padding(.vertical, 10)
     }
 
-    private func projectRow(project: Project, stats: AppStats, maxScreenTime: Double) -> some View {
-        let isExpanded = expandedProject == project.name
+    private func categoryRow(category: AppCategory, stats: AppStats, maxScreenTime: Double) -> some View {
+        let isExpanded = expandedCategory == category.name
 
         return VStack(spacing: 3) {
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) {
-                    expandedProject = isExpanded ? nil : project.name
+                    expandedCategory = isExpanded ? nil : category.name
                 }
             } label: {
                 HStack(spacing: 6) {
@@ -511,7 +511,7 @@ struct MenuBarView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(.blue)
 
-                    Text(project.name)
+                    Text(category.name)
                         .font(.body)
                         .lineLimit(1)
                     Spacer()
@@ -533,18 +533,18 @@ struct MenuBarView: View {
 
             if isExpanded {
                 let day = selectedDayStats
-                let projectApps = project.appNames.sorted()
+                let categoryApps = category.appNames.sorted()
                     .compactMap { name -> (name: String, stats: AppStats)? in
                         guard let s = day.perApp[name], s.screenTimeSeconds > 0 else { return nil }
                         return (name: name, stats: s)
                     }
                     .sorted { $0.stats.screenTimeSeconds > $1.stats.screenTimeSeconds }
 
-                if !projectApps.isEmpty {
-                    let maxAppTime = projectApps.first?.stats.screenTimeSeconds ?? 1
+                if !categoryApps.isEmpty {
+                    let maxAppTime = categoryApps.first?.stats.screenTimeSeconds ?? 1
                     VStack(spacing: 4) {
-                        ForEach(projectApps, id: \.name) { app in
-                            projectAppRow(name: app.name, stats: app.stats, maxScreenTime: maxAppTime)
+                        ForEach(categoryApps, id: \.name) { app in
+                            categoryAppRow(name: app.name, stats: app.stats, maxScreenTime: maxAppTime)
                         }
                     }
                     .padding(.top, 4)
@@ -557,7 +557,7 @@ struct MenuBarView: View {
         .padding(.vertical, 2)
     }
 
-    private func projectAppRow(name: String, stats: AppStats, maxScreenTime: Double) -> some View {
+    private func categoryAppRow(name: String, stats: AppStats, maxScreenTime: Double) -> some View {
         VStack(spacing: 2) {
             HStack(spacing: 6) {
                 Text(name)

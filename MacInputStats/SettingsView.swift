@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var projectStore: ProjectStore
+    @ObservedObject var categoryStore: CategoryStore
     @ObservedObject var store: StatsStore
     var onClose: (() -> Void)?
 
-    @State private var editingProjectId: UUID?
+    @State private var editingCategoryId: UUID?
     @State private var draftName: String = ""
     @State private var draftApps: Set<String> = []
     @State private var isAddingNew: Bool = false
@@ -13,12 +13,12 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 12) {
             header
-            Text("Categorize your apps by adding them to a project to see project-level stats.")
+            Text("Categorize your apps by adding them to a category to see category-level stats.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            projectList
-            if !isAddingNew && editingProjectId == nil {
+            categoryList
+            if !isAddingNew && editingCategoryId == nil {
                 addButton
             }
             Divider().padding(.horizontal, 0)
@@ -32,8 +32,8 @@ struct SettingsView: View {
                 .stroke(Color.black.opacity(0.5), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
-        .animation(.easeInOut(duration: 0.2), value: projectStore.projects)
-        .animation(.easeInOut(duration: 0.2), value: editingProjectId)
+        .animation(.easeInOut(duration: 0.2), value: categoryStore.categories)
+        .animation(.easeInOut(duration: 0.2), value: editingCategoryId)
         .animation(.easeInOut(duration: 0.2), value: isAddingNew)
     }
 
@@ -52,51 +52,51 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("Projects")
+            Text("Categories")
                 .font(.headline)
             Spacer()
             Color.clear.frame(width: 22, height: 22)
         }
     }
 
-    // MARK: - Project List
+    // MARK: - Category List
 
-    private var projectList: some View {
+    private var categoryList: some View {
         VStack(spacing: 8) {
-            if projectStore.projects.isEmpty && !isAddingNew {
-                Text("Group apps into projects to see combined stats.")
+            if categoryStore.categories.isEmpty && !isAddingNew {
+                Text("Group apps into categories to see combined stats.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.vertical, 8)
             }
 
-            ForEach(projectStore.projects) { project in
-                if editingProjectId == project.id {
-                    projectEditor(existingId: project.id)
+            ForEach(categoryStore.categories) { category in
+                if editingCategoryId == category.id {
+                    categoryEditor(existingId: category.id)
                 } else {
-                    projectCard(project)
+                    categoryCard(category)
                 }
             }
 
             if isAddingNew {
-                projectEditor(existingId: nil)
+                categoryEditor(existingId: nil)
             }
         }
     }
 
-    private func projectCard(_ project: Project) -> some View {
+    private func categoryCard(_ category: AppCategory) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "folder.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.blue)
-                Text(project.name)
+                Text(category.name)
                     .font(.body.weight(.medium))
                     .lineLimit(1)
                 Spacer()
                 Button {
-                    beginEditing(project)
+                    beginEditing(category)
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 10, weight: .semibold))
@@ -105,7 +105,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 Button {
-                    projectStore.delete(id: project.id)
+                    categoryStore.delete(id: category.id)
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 10, weight: .semibold))
@@ -115,8 +115,8 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            if !project.appNames.isEmpty {
-                appChips(project.appNames.sorted())
+            if !category.appNames.isEmpty {
+                appChips(category.appNames.sorted())
             }
         }
         .padding(10)
@@ -138,12 +138,12 @@ struct SettingsView: View {
 
     // MARK: - Editor
 
-    private func projectEditor(existingId: UUID?) -> some View {
+    private func categoryEditor(existingId: UUID?) -> some View {
         let assignedToOthers = otherAssignedApps(excluding: existingId)
         let availableApps = store.allAppNames.sorted()
 
         return VStack(alignment: .leading, spacing: 8) {
-            TextField("Project name", text: $draftName)
+            TextField("Category name", text: $draftName)
                 .textFieldStyle(.roundedBorder)
                 .font(.body)
 
@@ -190,7 +190,7 @@ struct SettingsView: View {
                     .foregroundStyle(.primary.opacity(isAssignedElsewhere ? 0.3 : 1))
                 Spacer()
                 if isAssignedElsewhere {
-                    Text(projectNameForApp(app, excluding: excludingId))
+                    Text(categoryNameForApp(app, excluding: excludingId))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -215,7 +215,7 @@ struct SettingsView: View {
             Spacer()
 
             Button("Save") {
-                saveProject(existingId: existingId)
+                saveCategory(existingId: existingId)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.blue)
@@ -235,7 +235,7 @@ struct SettingsView: View {
             HStack(spacing: 4) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 12))
-                Text("Add Project")
+                Text("Add Category")
                     .font(.subheadline.weight(.medium))
             }
             .foregroundStyle(.blue)
@@ -264,44 +264,44 @@ struct SettingsView: View {
 
     // MARK: - Helpers
 
-    private func beginEditing(_ project: Project) {
-        draftName = project.name
-        draftApps = project.appNames
-        editingProjectId = project.id
+    private func beginEditing(_ category: AppCategory) {
+        draftName = category.name
+        draftApps = category.appNames
+        editingCategoryId = category.id
         isAddingNew = false
     }
 
     private func cancelEditing() {
-        editingProjectId = nil
+        editingCategoryId = nil
         isAddingNew = false
         draftName = ""
         draftApps = []
     }
 
-    private func saveProject(existingId: UUID?) {
+    private func saveCategory(existingId: UUID?) {
         let trimmed = draftName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
-        if let id = existingId, var existing = projectStore.projects.first(where: { $0.id == id }) {
+        if let id = existingId, var existing = categoryStore.categories.first(where: { $0.id == id }) {
             existing.name = trimmed
             existing.appNames = draftApps
-            projectStore.update(existing)
+            categoryStore.update(existing)
         } else {
-            let project = Project(name: trimmed, appNames: draftApps)
-            projectStore.add(project)
+            let category = AppCategory(name: trimmed, appNames: draftApps)
+            categoryStore.add(category)
         }
         cancelEditing()
     }
 
-    private func otherAssignedApps(excluding projectId: UUID?) -> Set<String> {
-        projectStore.projects
-            .filter { $0.id != projectId }
+    private func otherAssignedApps(excluding categoryId: UUID?) -> Set<String> {
+        categoryStore.categories
+            .filter { $0.id != categoryId }
             .reduce(into: Set<String>()) { $0.formUnion($1.appNames) }
     }
 
-    private func projectNameForApp(_ app: String, excluding projectId: UUID?) -> String {
-        projectStore.projects
-            .first { $0.id != projectId && $0.appNames.contains(app) }?
+    private func categoryNameForApp(_ app: String, excluding categoryId: UUID?) -> String {
+        categoryStore.categories
+            .first { $0.id != categoryId && $0.appNames.contains(app) }?
             .name ?? ""
     }
 }

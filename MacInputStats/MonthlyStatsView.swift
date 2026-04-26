@@ -24,7 +24,7 @@ struct MonthlyStatsView: View {
     @ObservedObject var claudeStore: ClaudeSessionStore
     @ObservedObject var cursorStore: CursorSessionStore
     @ObservedObject var codexStore: CodexSessionStore
-    @ObservedObject var projectStore: ProjectStore
+    @ObservedObject var categoryStore: CategoryStore
     var onClose: (() -> Void)?
 
     @State private var selectedRange: StatsRange = .allTime
@@ -58,8 +58,8 @@ struct MonthlyStatsView: View {
             header
             rangePicker
             inputGrid
-            if projectStore.hasProjects {
-                projectSection
+            if categoryStore.hasCategories {
+                categorySection
             }
             if hasAnyAI {
                 aiSection
@@ -179,12 +179,12 @@ struct MonthlyStatsView: View {
         .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
-    // MARK: - Projects Section
+    // MARK: - Categories Section
 
-    private func aggregatedProjectStats(for project: Project) -> AppStats {
+    private func aggregatedCategoryStats(for category: AppCategory) -> AppStats {
         var combined = AppStats()
         for day in inputDays {
-            let s = day.stats(for: project)
+            let s = day.stats(for: category)
             combined.keystrokes += s.keystrokes
             combined.pointerClicks += s.pointerClicks
             combined.scrollEvents += s.scrollEvents
@@ -194,22 +194,22 @@ struct MonthlyStatsView: View {
         return combined
     }
 
-    private var projectSection: some View {
-        let activeProjects = projectStore.projects.filter { aggregatedProjectStats(for: $0).screenTimeSeconds > 0 }
+    private var categorySection: some View {
+        let activeCategories = categoryStore.categories.filter { aggregatedCategoryStats(for: $0).screenTimeSeconds > 0 }
 
         return Group {
-            if !activeProjects.isEmpty {
+            if !activeCategories.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Divider().padding(.horizontal, 0)
-                    Text("Projects")
+                    Text("Categories")
                         .font(.headline)
                         .padding(.horizontal, 6)
                         .padding(.bottom, 2)
 
                     VStack(spacing: 4) {
-                        ForEach(activeProjects) { project in
-                            let stats = aggregatedProjectStats(for: project)
-                            projectRow(name: project.name, screenTime: stats.screenTimeSeconds)
+                        ForEach(activeCategories) { category in
+                            let stats = aggregatedCategoryStats(for: category)
+                            categoryRow(name: category.name, screenTime: stats.screenTimeSeconds)
                         }
                     }
                 }
@@ -217,7 +217,7 @@ struct MonthlyStatsView: View {
         }
     }
 
-    private func projectRow(name: String, screenTime: Double) -> some View {
+    private func categoryRow(name: String, screenTime: Double) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "folder.fill")
                 .font(.system(size: 12))

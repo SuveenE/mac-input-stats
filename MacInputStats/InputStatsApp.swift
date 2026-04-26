@@ -33,7 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let codexStore = CodexSessionStore()
     private var claudeServer: ClaudeSocketServer?
 
-    let projectStore = ProjectStore()
+    let categoryStore = CategoryStore()
 
     private var statusItem: NSStatusItem!
     private var panel: FloatingPanel<AnyView>?
@@ -147,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             claudeStore: claudeStore,
             cursorStore: cursorStore,
             codexStore: codexStore,
-            projectStore: projectStore,
+            categoryStore: categoryStore,
             onClose: { [weak self] in self?.dismissMonthlySidePanel() }
         )
 
@@ -220,7 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let mainPanel = panel, mainPanel.isVisible else { return }
 
         let view = SettingsView(
-            projectStore: projectStore,
+            categoryStore: categoryStore,
             store: store,
             onClose: { [weak self] in self?.dismissSettingsSidePanel() }
         )
@@ -300,7 +300,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             claudeStore: claudeStore,
             cursorStore: cursorStore,
             codexStore: codexStore,
-            projectStore: projectStore,
+            categoryStore: categoryStore,
             updater: updaterController.updater,
             onClose: { [weak self] in self?.closePanel() },
             onOpenSettings: { [weak self] in self?.toggleSettings() },

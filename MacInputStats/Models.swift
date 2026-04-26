@@ -58,9 +58,9 @@ struct DailyStats: Codable, Identifiable, Equatable {
             .sorted { $0.stats.screenTimeSeconds > $1.stats.screenTimeSeconds }
     }
 
-    func stats(for project: Project) -> AppStats {
+    func stats(for category: AppCategory) -> AppStats {
         var combined = AppStats()
-        for appName in project.appNames {
+        for appName in category.appNames {
             if let s = perApp[appName] {
                 combined.keystrokes += s.keystrokes
                 combined.pointerClicks += s.pointerClicks
@@ -73,7 +73,7 @@ struct DailyStats: Codable, Identifiable, Equatable {
     }
 }
 
-struct Project: Codable, Identifiable, Equatable {
+struct AppCategory: Codable, Identifiable, Equatable {
     let id: UUID
     var name: String
     var appNames: Set<String>

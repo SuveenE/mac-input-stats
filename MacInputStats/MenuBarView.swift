@@ -99,7 +99,7 @@ struct MenuBarView: View {
     @State private var expandedApp: String?
     @AppStorage("statsExpanded") private var statsExpanded = false
     @AppStorage("chartRange") private var chartRange: ChartRange = .sevenDays
-    @State private var trendMode: TrendMode = .codingTools
+    @State private var trendMode: TrendMode = .input
     @State private var selectedDateOffset: Int = 0
     @AppStorage("showInputStats") private var showInputStats = true
     @AppStorage("showAITools") private var showAITools = true
@@ -148,6 +148,10 @@ struct MenuBarView: View {
             return liveTalkTime
         }
         return AppStats.formatDuration(selectedDayStats.talkDurationSeconds)
+    }
+
+    private var hasCodingToolsData: Bool {
+        !claudeStore.days.isEmpty || !cursorStore.days.isEmpty || !codexStore.days.isEmpty
     }
 
     var body: some View {
@@ -236,6 +240,9 @@ struct MenuBarView: View {
         .animation(.easeInOut(duration: 0.2), value: chartRange)
         .animation(.easeInOut(duration: 0.2), value: trendMode)
         .animation(.easeInOut(duration: 0.15), value: selectedDateOffset)
+        .onAppear {
+            trendMode = hasCodingToolsData ? .codingTools : .input
+        }
     }
 
     // MARK: - Header

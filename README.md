@@ -41,7 +41,15 @@
 - **Talk time detection** using CoreAudio microphone activity monitoring
 - **Coding tool stats** tracking execution duration and words sent via hooks (Claude Code, Cursor)
 - **Trend charts** with interactive 1d / 7d / 14d / 30d range picker
+- **All Time stats** panel with aggregated totals, top apps, AI tool time, and category breakdowns
+- **App categories** to group apps and see combined screen time stats
+- **Customizable sections** to toggle which sections appear on the main panel
 - **Daily persistence** with a rolling 7-day history
+
+<div align="center">
+  <img src="assets/alltime-stats.png" alt="All Time stats panel showing aggregated input stats, AI tool time, and top apps" height="400">
+  <p><em>All Time stats with range picker, AI tool tracking, and top apps by screen time.</em></p>
+</div>
 
 ## How It Works
 
